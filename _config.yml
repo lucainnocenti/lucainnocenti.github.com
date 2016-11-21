@@ -6,6 +6,8 @@ keywords: "Random"
 biography: "I am me."
 colophon: "Random blabla."
 
+future: true
+
 baseurl: ""
 url: "http://hugosereno.eu"
 
