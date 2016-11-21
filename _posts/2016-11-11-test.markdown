@@ -6,20 +6,71 @@ comments: true
 external-url:
 categories: Test
 ---
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+
 
 But can I use latex??
 
 $$ 2+ \frac{1}{2} $$
 
-it looks like it. Cool!! What about nice fonts?
+it looks like it. Cool!! What about something slightly more complicated?
 
 $$
   \lvert \psi \rangle =  \frac{1}{\sqrt2} \left( \lvert 0 \rangle + \lvert 1 \rangle\right)
 $$
 
+`
+Code is also not a problem, nice.
+`
+
+    asd
+    code
+    if 1 then fuck
+
 >>> asdSsd asda 
 
-> Sleeping Beauty undergoes an experiment where she's put to sleep on Sunday. Immediately after that, a fair coin is tossed. If it comes out Heads, Sleeping Beauty is waken on Monday. If it comes out Tails, she's waken both on Monday and Tuesday. After being waken, the experimentalist asks Sleeping Beauty: *"What is your degree of certainty that the coin landed heads?"*. He subsequently puts Sleeping Beauty to sleep, taking care to administer her an amnesia inducing drug that ensures she doesn't remember the experiment. Hence, everytime Sleeping Beauty is awaked, she won't know which day it is or whether she has already been awakened before or not. What should her answer be?
+Now let's see if we can put a graph here:
 
+<canvas id="myChart" width="200" height="100"></canvas>
 
-sure how are you?
+<script>
+var ctx = document.getElementById("myChart");
+var myChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+        datasets: [{
+            label: '# of Votes',
+            data: [12, 19, 3, 5, 2, 3],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ],
+            borderColor: [
+                'rgba(255,99,132,1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero:true
+                }
+            }]
+        }
+    }
+});
+</script>
+
+Now that's not bad, is it?
