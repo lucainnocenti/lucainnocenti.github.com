@@ -11,11 +11,7 @@ future: true
 baseurl: ""
 url: "http://hugosereno.eu"
 
-twitter_username: ferreira_hugo
-github_username: hugoferreira
-linkedin_username: hugoserenoferreira
-facebook_username: hugo.sereno.ferreira
-google-analytics: UA-69060-5
+github_username: lucainnocenti
 
 simple_search: http://google.com/search
 markdown: kramdown
