@@ -155,7 +155,7 @@ function draw(x, y) {
         animate();
     }
 
-    $("#canvas").mousedown(function (e) {
+    $("#myCanvas").mousedown(function (e) {
         handleMouseDown(e);
     });
 
