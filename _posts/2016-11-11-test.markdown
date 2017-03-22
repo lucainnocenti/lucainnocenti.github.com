@@ -15,15 +15,6 @@ categories: Test
     }
 </style>
 
-<script>
-$(document).ready(function(){
-    $("p").click(function(){
-        $(this).hide();
-    });
-});
-</script>
-
-Click anywhere to remove text!!
 
 But can I use latex??
 $$
