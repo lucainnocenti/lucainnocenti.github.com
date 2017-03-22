@@ -78,7 +78,7 @@ var myChart = new Chart(ctx, {
 Now that's not bad, is it?
 Let's now try to move rectangles in a frame:
 
-<canvas id="myCanvas" width=300 height=300></canvas>
+<canvas id="myCanvas" width="300" height="300"></canvas>
 
 <script>
 var canvas = document.getElementById("myCanvas");
