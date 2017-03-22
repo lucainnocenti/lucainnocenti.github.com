@@ -7,6 +7,15 @@ external-url:
 categories: Test
 ---
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<script>
+$(document).ready(function(){
+    $("p").click(function(){
+        $(this).hide();
+    });
+});
+</script>
 
 
 But can I use latex??
@@ -25,7 +34,7 @@ Code is also not a problem, nice.
 
     asd
     code
-    if 1 then fuck
+    if 1 then 0
 
 >>> asdSsd asda 
 
@@ -74,3 +83,7 @@ var myChart = new Chart(ctx, {
 </script>
 
 Now that's not bad, is it?
+
+<p>If you click on me, I will disappear.</p>
+<p>Click me away!</p>
+<p>Click me too!</p>
