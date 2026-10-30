@@ -1,0 +1,3447 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>QELM · Shot-noise MSE lab</title>
+  <style>
+    :root {
+      --bg: #090f1d;
+      --panel: #111b2c;
+      --panel2: #162236;
+      --ink: #e7eefb;
+      --muted: #91a3bd;
+      --hair: #2b3b52;
+      --accent: #64d9dc;
+      --orange: #f2af72;
+      --violet: #aca6fa;
+      --red: #fb808a;
+      --r: 13px;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(ellipse 60% 50% at 75% -22%,#23385b 0%,transparent 76%),var(--bg);
+      color: var(--ink);
+      font: 13px/1.42 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    button,input,select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      color: #91e7ed;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .app {
+      max-width: 1560px;
+      margin: auto;
+      padding: 16px 20px 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 2px 13px;
+      border-bottom: 1px solid var(--hair);
+    }
+
+    .brand {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 43px;
+      height: 43px;
+      flex: none;
+      border: 1px solid #44788a;
+      border-radius: 12px;
+      background: linear-gradient(150deg,#183753,#192744);
+      font-size: 20px;
+      color: var(--accent);
+      font-weight: 650;
+      letter-spacing: -2px;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 2px;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 21px;
+      line-height: 1.19;
+      letter-spacing: -.7px;
+      font-weight: 690;
+    }
+
+    .brand p {
+      color: var(--muted);
+      margin: 2px 0 0;
+      font-size: 11.5px;
+    }
+
+    .headerRight {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      border: 1px solid var(--hair);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--panel);
+    }
+
+    .pill strong {
+      color: var(--ink);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 9px #64d9dc55;
+    }
+
+    .status.busy .dot {
+      background: var(--orange);
+      box-shadow: 0 0 9px #f2af7255;
+      animation: pulse 1.4s infinite;
+    }
+
+    .status.error .dot {
+      background: var(--red);
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: .3;
+      }
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(276px,310px) minmax(0,1fr);
+      gap: 14px;
+      margin-top: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--hair);
+      border-radius: var(--r);
+      background: linear-gradient(180deg,#121e30 0%,#10192a 100%);
+      box-shadow: 0 12px 34px #020a1720;
+    }
+
+    .controls {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sectionTitle {
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 1.5px;
+      color: #b9c8dc;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+
+    .settingGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 10px;
+      row-gap: 8px;
+    }
+
+    .setting {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .setting label,.fieldLabel {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 550;
+      white-space: nowrap;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 10.5px;
+      line-height: 1.37;
+    }
+
+    .setting input,.setting select,.shotRow input,.shotRow select {
+      background: #0c1625;
+      border: 1px solid var(--hair);
+      color: var(--ink);
+      border-radius: 7px;
+      min-width: 0;
+      width: 100%;
+      height: 32px;
+      padding: 4px 8px;
+      outline: none;
+    }
+
+    .setting input:focus,.setting select:focus,.shotRow input:focus {
+      border-color: var(--accent);
+    }
+
+    hr {
+      height: 1px;
+      border: 0;
+      background: var(--hair);
+      width: 100%;
+      margin: 0;
+    }
+
+    .shotBox {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .shotRow {
+      display: grid;
+      grid-template-columns: 82px minmax(0,1fr) 43px;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .shotLabel {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .shotLabel strong {
+      display: block;
+      font-size: 12px;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .infButton {
+      border: 1px solid var(--hair);
+      background: #0c1625;
+      color: var(--muted);
+      height: 32px;
+      border-radius: 7px;
+      font-size: 16px;
+    }
+
+    .infButton.active {
+      color: #0b2330;
+      background: var(--accent);
+      border-color: var(--accent);
+      font-weight: 750;
+    }
+
+    .shotRow input:disabled {
+      opacity: .35;
+    }
+
+    .rangeRow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .rangeRow input {
+      flex: 1;
+      accent-color: var(--accent);
+      min-width: 0;
+    }
+
+    .rangeRow output {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      min-width: 24px;
+      text-align: right;
+    }
+
+    .optionLine {
+      display: flex;
+      justify-content: space-between;
+      gap: 9px;
+      align-items: center;
+    }
+
+    .optionLine .fieldLabel {
+      max-width: 45%;
+    }
+
+    .optionLine select {
+      background: #0c1625;
+      border: 1px solid var(--hair);
+      color: var(--ink);
+      border-radius: 7px;
+      height: 31px;
+      padding: 4px 7px;
+      min-width: 0;
+      max-width: 60%;
+      font-size: 11.5px;
+    }
+
+    .actionRow {
+      display: flex;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .primaryButton {
+      flex: 1;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      font-weight: 750;
+      color: #0a222d;
+      box-shadow: 0 3px 20px #5ce3e71b;
+    }
+
+    .primaryButton:hover {
+      background: #8bf4f2;
+    }
+
+    .secondaryButton {
+      height: 36px;
+      border: 1px solid var(--hair);
+      border-radius: 8px;
+      background: #1b293e;
+      color: var(--ink);
+      padding: 0 10px;
+    }
+
+    .secondaryButton:hover {
+      border-color: #52718e;
+    }
+
+    .tinyButton {
+      border: 1px solid var(--hair);
+      background: #121f32;
+      color: var(--muted);
+      font-size: 11px;
+      border-radius: 6px;
+      padding: 5px 8px;
+    }
+
+    .tinyButton:hover {
+      color: var(--ink);
+    }
+
+    .progressTrack {
+      height: 3px;
+      width: 100%;
+      background: #213047;
+      border-radius: 50px;
+      overflow: hidden;
+    }
+
+    .progressFill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg,var(--accent),var(--violet));
+      transition: width .2s;
+    }
+
+    .runNote {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 10px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .chartPanel {
+      min-width: 0;
+      overflow: hidden;
+      padding: 12px 14px 9px;
+    }
+
+    .chartHeader {
+      display: flex;
+      gap: 11px;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .chartHeadline {
+      font-size: 14px;
+      font-weight: 720;
+      letter-spacing: -.25px;
+    }
+
+    .chartSub {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .toolGroups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .segmented {
+      display: inline-flex;
+      gap: 2px;
+      background: #0a1423;
+      border: 1px solid var(--hair);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .segmented button {
+      padding: 6px 9px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 11px;
+      min-width: 42px;
+      border-radius: 5px;
+      white-space: nowrap;
+    }
+
+    .segmented button.active {
+      background: #283c57;
+      color: #f5f9ff;
+      box-shadow: 0 1px 2px #0005;
+    }
+
+    .underChart {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--hair);
+      padding-top: 9px;
+    }
+
+    .legendLine {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+
+    .legendItem {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .line {
+      width: 19px;
+      height: 0;
+      border-top: 2px dashed var(--accent);
+    }
+
+    .line.orange {
+      border-color: var(--orange);
+    }
+
+    .line.white {
+      border-color: #f2edf8;
+      opacity: .75;
+      border-top-style: dotted;
+    }
+
+    .exports {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #plot {
+      width: 100%;
+      height: min(69vh,650px);
+      min-height: 470px;
+      position: relative;
+    }
+
+    #fallback3d {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      touch-action: none;
+      cursor: grab;
+      border-radius: 4px;
+    }
+
+    #fallback3d.dragging {
+      cursor: grabbing;
+    }
+
+    .emptyOverlay {
+      position: absolute;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%,-50%);
+      z-index: 1;
+      border: 1px solid var(--hair);
+      padding: 10px 16px;
+      border-radius: 8px;
+      color: var(--muted);
+      background: #101a2bea;
+      pointer-events: none;
+      display: none;
+    }
+
+    .chartWrap {
+      position: relative;
+    }
+
+    .inspector {
+      display: grid;
+      grid-template-columns: minmax(175px,1.2fr) repeat(4,minmax(90px,1fr));
+      gap: 12px;
+      padding: 11px 4px 4px;
+      min-width: 0;
+    }
+
+    .inspectorBox {
+      min-width: 0;
+      border-right: 1px solid var(--hair);
+      padding-right: 7px;
+    }
+
+    .inspectorBox:last-child {
+      border: 0;
+    }
+
+    .metricLabel {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .35px;
+    }
+
+    .metricValue {
+      display: block;
+      font-size: 14px;
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .metricSub {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    .inspectHead {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      justify-content: space-between;
+    }
+
+    .inspectHead strong {
+      font-size: 11px;
+    }
+
+    .inspectHead button {
+      font-size: 10px;
+      padding: 2px 5px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: baseline;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 10.5px;
+      padding: 0 2px;
+    }
+
+    .footer summary {
+      cursor: pointer;
+      color: #c4d3e6;
+    }
+
+    .footer details {
+      max-width: 100%;
+    }
+
+    .footContent {
+      margin: 8px 0 0;
+      line-height: 1.65;
+      max-width: 970px;
+    }
+
+    .formula {
+      color: #d9e4f4;
+      font-family: ui-monospace,SFMono-Regular,Consolas,monospace;
+      font-size: 10.5px;
+    }
+
+    .footLinks {
+      white-space: nowrap;
+    }
+
+    @media(max-width:1120px) {
+      .workspace {
+        grid-template-columns: 270px minmax(0,1fr);
+      }
+      .inspector {
+        grid-template-columns: repeat(5,minmax(70px,1fr));
+        gap: 7px;
+      }
+      .metricValue {
+        font-size: 12px;
+      }
+      .chartPanel {
+        padding: 11px 10px;
+      }
+      .controls {
+        padding: 12px;
+      }
+    }
+
+    @media(max-width:900px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px 17px;
+      }
+      .controls hr {
+        display: none;
+      }
+      .controlBlock {
+        min-width: 0;
+      }
+      .shotBox {
+        gap: 7px;
+      }
+      .actionBlock {
+        grid-column: 1/-1;
+      }
+      .chartPanel {
+        padding: 12px;
+      }
+      #plot {
+        height: 64vw;
+        min-height: 460px;
+        max-height: 680px;
+      }
+    }
+
+    @media(max-width:590px) {
+      .app {
+        padding: 10px;
+      }
+      .brand h1 {
+        font-size: 17px;
+      }
+      .brand-mark {
+        width: 35px;
+        height: 35px;
+        font-size: 17px;
+      }
+      .headerRight .pill {
+        display: none;
+      }
+      .workspace {
+        gap: 10px;
+      }
+      .controls {
+        display: flex;
+      }
+      .chartHeader {
+        gap: 9px;
+      }
+      .chartPanel {
+        padding: 10px 7px;
+      }
+      .segmented button {
+        padding: 5px 6px;
+        font-size: 10px;
+      }
+      .inspector {
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 8px;
+      }
+      .inspectorBox {
+        border-right: 0;
+        border-bottom: 1px solid var(--hair);
+        padding-bottom: 6px;
+      }
+      .inspectorBox:first-child {
+        grid-column: 1/-1;
+      }
+      #plot {
+        height: 94vw;
+        min-height: 390px;
+        max-height: 525px;
+      }
+      .legendLine {
+        gap: 8px;
+      }
+    }
+
+    .tinyToggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--ink);
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .tinyToggle input {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+    }
+
+    .labelNoiseRow {
+      grid-template-columns: 82px minmax(0,1fr) 48px;
+    }
+
+    .labelNoiseRow .hint {
+      text-align: right;
+    }
+
+    .labelNoiseRow input:disabled {
+      opacity: .45;
+    }
+
+    .chartSetting {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 10.5px;
+    }
+
+    .chartSetting select {
+      background: #0a1423;
+      color: var(--ink);
+      border: 1px solid var(--hair);
+      border-radius: 7px;
+      font-size: 11px;
+      height: 31px;
+      padding: 3px 6px;
+    }
+
+    /* Domain controls and shared form spacing. */
+    [hidden] {
+      display: none!important;
+    }
+
+    .controlHeading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .controlHeading .sectionTitle {
+      margin: 0;
+    }
+
+    .stackedControls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sectionNote {
+      margin: 7px 0 0;
+    }
+
+    .settingGap {
+      margin-top: 7px;
+    }
+
+    .setting label.wrapLabel {
+      white-space: normal;
+    }
+
+    .setting input:disabled {
+      opacity: .45;
+    }
+
+    .rangeGrid .setting label {
+      font-size: 10.5px;
+    }
+
+    .presetHint { margin: 6px 0 0; }
+
+    .axesBlock { display: flex; flex-direction: column; gap: 8px; }
+    .axesGroup { padding: 7px 0 0; border-top: 1px solid var(--hair); }
+    .axesGroup .settingGrid { margin-top: 8px; }
+    .axesGroup .setting label { white-space: normal; }
+    .axesNote { margin: 0; }
+    /* The original rcond select was styled by .optionLine select; keep the
+       replacement unrestricted numeric input visually consistent. */
+    .optionLine > input[type="number"] {
+      min-width: 0; max-width: 60%; width: 60%; height: 31px;
+      background: #0c1625; border: 1px solid var(--hair);
+      border-radius: 7px; color: var(--ink); padding: 4px 7px;
+    }
+    /* Plotly SVG guides can overflow its internal SVG viewport on phones;
+       clip them before they cover the legend and point inspector. */
+    .chartWrap, #plot { overflow: hidden; }
+    .samplingAll { justify-content: flex-start; }
+
+    .seedControls {
+      display: flex;
+      gap: 5px;
+      width: 60%;
+    }
+
+    .seedControls input {
+      background: #0c1625;
+      border: 1px solid var(--hair);
+      border-radius: 7px;
+      height: 31px;
+      color: var(--ink);
+      padding: 3px 7px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .inputError {
+      color: var(--red);
+      font-size: 11px;
+      line-height: 1.4;
+      margin: 7px 0 0;
+    }
+
+    .runNote span:last-child {
+      text-align: right;
+    }
+    @media (min-width: 901px) and (min-height: 740px) {
+      .chartPanel { position: sticky; top: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">Q²</div>
+        <div>
+          <div class="eyebrow">Numerical experiment</div>
+          <h1>Quantum linear regression · MSE lab</h1>
+          <p>Rank-one POVMs · optional label noise · unregularized pseudoinverse</p>
+        </div>
+      </div>
+      <div class="headerRight">
+        <div class="pill" id="geometryPill">d = <strong>3</strong> · d² = <strong>9</strong></div>
+        <div class="pill status" id="statusPill">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="statusText">Ready</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="panel controls" aria-label="Simulation controls">
+        <!-- Reproducible, editable experiment configurations. -->
+        <div class="controlBlock">
+          <h2 class="sectionTitle">Experiment preset</h2>
+          <div class="setting">
+            <label for="preset">Configuration</label>
+            <select id="preset" aria-describedby="presetHint">
+              <option value="custom" selected>Custom settings</option>
+              <option value="both">Classical + quantum peaks · n_tr &gt; d²</option>
+              <option value="interpolation">Only classical interpolation peak · n_tr &lt; d²</option>
+              <option value="labels">Label-noise peak · n_tr = d² &lt; n_out</option>
+            </select>
+          </div>
+          <p class="hint presetHint" id="presetHint">Presets use d = 6, R = 100, every integer sample, and an editable 0–2.5 d² domain. Selecting a preset recomputes the slice.</p>
+        </div>
+        <hr>
+
+        <!-- Model size and sampling density. -->
+        <div class="controlBlock">
+          <h2 class="sectionTitle">Geometry &amp; ensemble</h2>
+          <div class="settingGrid">
+            <div class="setting">
+              <label for="dimension">Hilbert dimension d</label>
+              <input id="dimension" data-model type="number" min="2" step="1" value="3">
+            </div>
+            <div class="setting">
+              <label for="realizations">Realizations R</label>
+              <input id="realizations" data-model type="number" min="1" step="1" value="8">
+            </div>
+          </div>
+          <div class="setting settingGap">
+            <label for="resolution" id="resolutionLabel">Grid samples / axis</label>
+            <input id="resolution" data-model type="number" min="1" step="1" value="15"
+              title="Requested number of distinct integer counts per varying axis; each axis is capped by its available integer counts.">
+            <span class="hint" id="resolutionCap">Integer-count limits shown here</span>
+          </div>
+          <label class="tinyToggle samplingAll" for="allCounts">
+            <input id="allCounts" data-model type="checkbox"> Sample every integer count (maximum resolution)
+          </label>
+          <p class="hint sectionNote">Each axis uses distinct integer counts; actual sample counts can differ between axes.</p>
+        </div>
+        <hr>
+
+        <!-- Plot domain: independent bounds and optional one-dimensional slices. -->
+        <div class="controlBlock">
+          <div class="controlHeading">
+            <h2 class="sectionTitle">Plot domain</h2>
+            <button type="button" id="resetRanges" class="tinyButton" title="Restore default ranges and slice value">Reset ranges</button>
+          </div>
+          <div class="stackedControls">
+            <div class="setting">
+              <label for="plotMode">Compute</label>
+              <select id="plotMode" data-model>
+                <option value="map" selected>Full map</option>
+                <option value="horizontal">Horizontal slices · fixed n_tr</option>
+                <option value="vertical">Vertical slices · fixed n_out</option>
+              </select>
+            </div>
+            <div class="optionLine">
+              <label for="rangeUnits" class="fieldLabel">Range units</label>
+              <select id="rangeUnits">
+                <option value="normalized" selected>Multiples of d²</option>
+                <option value="counts">Integer counts</option>
+              </select>
+            </div>
+            <div class="settingGrid rangeGrid">
+              <div class="setting">
+                <label for="outMin">n_out min <span class="rangeUnit">/ d²</span></label>
+                <input id="outMin" data-model type="number" min="0" step="any" value="0">
+              </div>
+              <div class="setting">
+                <label for="outMax">n_out max <span class="rangeUnit">/ d²</span></label>
+                <input id="outMax" data-model type="number" min="0" step="any" value="2.5">
+              </div>
+              <div class="setting">
+                <label for="trMin">n_tr min <span class="rangeUnit">/ d²</span></label>
+                <input id="trMin" data-model type="number" min="0" step="any" value="0">
+              </div>
+              <div class="setting">
+                <label for="trMax">n_tr max <span class="rangeUnit">/ d²</span></label>
+                <input id="trMax" data-model type="number" min="0" step="any" value="2.5">
+              </div>
+            </div>
+            <div id="sliceControls" class="setting" style="display:none">
+              <label for="sliceValues" id="sliceLabel">Fixed n_tr values <span class="rangeUnit">/ d²</span></label>
+              <input id="sliceValues" data-model type="text" value="1" autocomplete="off" spellcheck="false"
+                aria-describedby="sliceHint" placeholder="e.g. 0.5, 1, 2">
+              <span class="hint" id="sliceHint">Enter one or more comma-separated values in the chosen units. Each is rounded to the nearest integer; n_out ≥ d and n_tr ≥ 1.</span>
+            </div>
+            <div class="hint" id="rangeSummary" aria-live="polite">Physical counts satisfy n_out ≥ d and n_tr ≥ 1.</div>
+            <label class="tinyToggle" for="criticalScans">
+              <input id="criticalScans" data-model type="checkbox" checked aria-describedby="criticalHint">
+              Include critical scans
+            </label>
+            <div class="hint" id="criticalHint">Sample every integer along the three critical lines, plus one-count neighbors, within the selected domain.</div>
+          </div>
+        </div>
+        <hr>
+
+        <!-- Display limits are independent from the simulated domain. -->
+        <div class="controlBlock axesBlock">
+          <h2 class="sectionTitle">Plot axis limits</h2>
+          <p class="hint axesNote">Optional fixed display bounds do not alter which points are computed. All count axes use multiples of d².</p>
+          <div class="axesGroup">
+            <label class="tinyToggle" for="fixCountAxes">
+              <input id="fixCountAxes" type="checkbox"> Fix n_out and n_tr axis limits
+            </label>
+            <div id="countAxesFields" class="settingGrid rangeGrid" hidden>
+              <div class="setting"><label for="axisOutMin">n_out / d² min</label><input id="axisOutMin" type="number" step="any" value="0"></div>
+              <div class="setting"><label for="axisOutMax">n_out / d² max</label><input id="axisOutMax" type="number" step="any" value="2.5"></div>
+              <div class="setting"><label for="axisTrMin">n_tr / d² min</label><input id="axisTrMin" type="number" step="any" value="0"></div>
+              <div class="setting"><label for="axisTrMax">n_tr / d² max</label><input id="axisTrMax" type="number" step="any" value="2.5"></div>
+            </div>
+          </div>
+          <div class="axesGroup">
+            <label class="tinyToggle" for="fixMseAxis">
+              <input id="fixMseAxis" type="checkbox"> Fix MSE range (slice axis / 3D height / colors)
+            </label>
+            <div id="mseAxisFields" class="settingGrid" hidden>
+              <div class="setting"><label for="axisMseMin">MSE min (raw)</label><input id="axisMseMin" type="number" step="any" min="0" value="0.000001"></div>
+              <div class="setting"><label for="axisMseMax">MSE max (raw)</label><input id="axisMseMax" type="number" step="any" min="0" value="1"></div>
+            </div>
+          </div>
+        </div>
+        <hr>
+
+        <!-- Training, inference, and label-noise budgets. -->
+        <div class="controlBlock">
+          <h2 class="sectionTitle">Sampling budgets</h2>
+          <div class="shotBox">
+            <div class="shotRow">
+              <span class="shotLabel"><strong>N</strong>Training / state</span>
+              <input id="trainShots" data-model type="number" min="1" step="1" value="3000" aria-label="Training shots N">
+              <button type="button" id="trainInf" class="infButton" title="Use exact training probabilities (N = infinity)" aria-pressed="false">∞</button>
+            </div>
+            <div class="shotRow">
+              <span class="shotLabel"><strong>M</strong>Inference / σ</span>
+              <input id="testShots" data-model type="number" min="1" step="1" value="1000" aria-label="Test shots M">
+              <button type="button" id="testInf" class="infButton" title="Use exact test probabilities (M = infinity)" aria-pressed="false">∞</button>
+            </div>
+            <div class="optionLine">
+              <label for="shotModel" class="fieldLabel">Training noise</label>
+              <select id="shotModel" data-model>
+                <option value="gaussian" selected>Gaussian covariance</option>
+                <option value="multinomial">Exact multinomial</option>
+              </select>
+            </div>
+            <div class="optionLine">
+              <label for="testMode" class="fieldLabel">Test shot error</label>
+              <select id="testMode" data-model>
+                <option value="analytic" selected>Average analytically</option>
+                <option value="sample">Sample test shots</option>
+              </select>
+            </div>
+            <div class="optionLine">
+              <span class="fieldLabel">Label noise</span>
+              <label class="tinyToggle" for="labelNoiseEnabled">
+                <input id="labelNoiseEnabled" data-model type="checkbox"> Enable Gaussian
+              </label>
+            </div>
+            <div class="shotRow labelNoiseRow">
+              <span class="shotLabel"><strong>γ</strong>Label std. dev.</span>
+              <input id="gamma" data-model type="number" min="0" step="any" value="0.05" disabled aria-label="Label noise standard deviation gamma">
+              <span class="hint">Var = γ²</span>
+            </div>
+          </div>
+          <p class="hint sectionNote">Gaussian draws preserve the full multinomial covariance and Σp = 1; they may give negative individual frequencies.</p>
+        </div>
+        <hr>
+
+        <!-- Target/test ensemble and pseudoinverse settings. -->
+        <div class="controlBlock">
+          <h2 class="sectionTitle">States &amp; numerical fit</h2>
+          <div class="optionLine">
+            <label for="pairs" class="fieldLabel">Target O / test σ</label>
+            <select id="pairs" data-model>
+              <option value="fixed" selected>Fixed across map</option>
+              <option value="vary">Haar-redraw each run</option>
+              <option value="haar">Haar average (exact)</option>
+            </select>
+          </div>
+          <p class="hint sectionNote">Haar average integrates over target O, test σ and Gaussian label noise exactly, per training/POVM realization.</p>
+          <div class="setting settingGap">
+            <label for="mix" class="wrapLabel">Test depolarization λ (σ = (1−λ)|ψ⟩⟨ψ| + λI/d)</label>
+            <div class="rangeRow">
+              <input type="range" id="mix" data-model min="0" max="1" step="0.001" value="0">
+              <input id="mixExact" data-model type="number" min="0" max="1" step="any" value="0" aria-label="Exact test depolarization" title="Enter any λ between 0 and 1" style="flex:0 0 70px;width:70px;min-width:0;background:#0c1625;border:1px solid var(--hair);border-radius:7px;padding:4px 6px;color:var(--ink);height:32px">
+              <output id="mixValue" for="mix" hidden>0.00</output>
+            </div>
+          </div>
+          <div class="optionLine settingGap">
+            <label for="rcond" class="fieldLabel">SVD rcond cutoff</label>
+            <input id="rcond" data-model type="number" min="0" step="any" value="1e-10" aria-label="Relative SVD singular-value cutoff">
+          </div>
+          <div class="optionLine settingGap">
+            <label for="seed" class="fieldLabel">Random seed</label>
+            <div class="seedControls">
+              <input id="seed" data-model type="number" step="1" value="271828">
+              <button type="button" id="shuffleSeed" class="tinyButton" title="Resample seed" aria-label="Resample seed"><span aria-hidden="true">↻</span></button>
+            </div>
+          </div>
+          <p class="hint sectionNote">The random generator uses the low 32 bits of the seed; all entered integers are reduced modulo 2³².</p>
+        </div>
+
+        <div class="controlBlock actionBlock">
+          <div class="actionRow">
+            <button type="button" class="primaryButton" id="runButton">Recompute map</button>
+            <button type="button" class="secondaryButton" id="cancelButton" title="Stop simulation">Stop</button>
+          </div>
+          <p class="inputError" id="inputError" role="alert" hidden></p>
+          <p class="hint sectionNote" id="costNote" aria-live="polite" hidden></p>
+          <div class="progressTrack settingGap"><div class="progressFill" id="progressFill"></div></div>
+          <div class="runNote"><span id="progressText">Preparing first map…</span><span id="gridText">—</span></div>
+        </div>
+      </aside>
+
+      <main class="panel chartPanel">
+        <div class="chartHeader">
+          <div>
+            <div class="chartHeadline" id="chartHeadline">Prediction mean-squared error</div>
+            <div class="chartSub" id="chartSubtitle">x = n_out / d² · y = n_tr / d² · click a cell for details</div>
+          </div>
+          <div class="toolGroups">
+            <div class="segmented" aria-label="Ensemble statistic">
+              <button type="button" data-stat="median" class="active" aria-pressed="true">Median</button>
+              <button type="button" data-stat="mean" aria-pressed="false">Mean</button>
+            </div>
+            <div class="segmented" id="mapViewControls" aria-label="Plot type">
+              <button type="button" data-view="2d" class="active" aria-pressed="true">2D</button>
+              <button type="button" data-view="3d" aria-pressed="false">3D</button>
+            </div>
+            <label class="chartSetting" id="threeStyleWrap" for="threeStyle" style="display:none">
+              3D style
+              <select id="threeStyle" aria-label="3D rendering style">
+                <option value="surface">Joined surface</option>
+                <option value="bars">Discrete bars</option>
+              </select>
+            </label>
+            <div class="segmented" aria-label="MSE scale">
+              <button type="button" data-scale="log" class="active" aria-pressed="true">Log₁₀</button>
+              <button type="button" data-scale="linear" aria-pressed="false">Linear</button>
+            </div>
+            <label class="chartSetting" id="colorRangeWrap" for="colorRange">
+              Colors
+              <select id="colorRange">
+                <option value="robust" selected>2–98%</option>
+                <option value="full">Full range</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="chartWrap">
+          <div id="plot" role="img" aria-label="Interactive MSE heatmap, 3D surface, discrete 3D bars, or horizontal and vertical slices across outcome count and training-set size"></div>
+          <canvas id="fallback3d" role="img" aria-label="Interactive 3D plot, including discrete sample bars; drag to rotate, scroll to zoom"></canvas>
+          <div class="emptyOverlay" id="emptyOverlay">Computing Monte Carlo surface…</div>
+        </div>
+        <div class="underChart">
+          <div class="legendLine">
+            <span class="legendItem" id="legendOut"><i class="line" aria-hidden="true"></i> n_out = d² (IC)</span>
+            <span class="legendItem" id="legendTr"><i class="line orange" aria-hidden="true"></i> n_tr = d²</span>
+            <span class="legendItem" id="legendDiagonal"><i class="line white" aria-hidden="true"></i> n_tr = n_out</span>
+            <span class="legendItem" id="legendSamples">● exact scans · ±1 neighbors</span>
+          </div>
+          <div class="exports">
+            <button type="button" class="tinyButton" id="exportCsv">Export CSV</button>
+            <button type="button" class="tinyButton" id="exportPng">Export image</button>
+          </div>
+        </div>
+        <div class="inspector" aria-live="polite">
+          <div class="inspectorBox">
+            <div class="inspectHead">
+              <strong id="selectionTitle">Inspect a point</strong>
+              <button type="button" class="tinyButton" id="unpin" style="display:none">Unpin</button>
+            </div>
+            <div class="metricSub" id="selectionSub">Move the cursor over the map.</div>
+          </div>
+          <div class="inspectorBox">
+            <div class="metricLabel">Ensemble MSE</div>
+            <strong class="metricValue" id="detailMse">—</strong>
+            <span class="metricSub" id="detailQ">10–90%: —</span>
+          </div>
+          <div class="inspectorBox">
+            <div class="metricLabel">Squared test bias</div>
+            <strong class="metricValue" id="detailBias">—</strong>
+            <span class="metricSub">Ensemble mean</span>
+          </div>
+          <div class="inspectorBox">
+            <div class="metricLabel">Inference variance</div>
+            <strong class="metricValue" id="detailVar">—</strong>
+            <span class="metricSub">Ensemble mean</span>
+          </div>
+          <div class="inspectorBox">
+            <div class="metricLabel">Fit conditioning</div>
+            <strong class="metricValue" id="detailCond">—</strong>
+            <span class="metricSub" id="detailRank">Median SVD rank: —</span>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="footer">
+      <details>
+        <summary>Method · interpretation · model assumptions</summary>
+        <div class="footContent">
+    Each realization draws a Haar-isometric frame Q ∈ ℂ<sup>n_out×d</sup> (Q†Q = I), giving rank-one effects E<sub>a</sub> = Q†|a⟩⟨a|Q. It is <em>the same POVM</em> for every training state and σ in that realization. Training states are Haar pure; the rank-one target O and test state σ are fixed across the map by default, with a switch for exact Haar integration of both. True training labels are y<sub>i</sub> = Tr(ρ<sub>i</sub>O). If enabled, the observed labels for regression are y<sub>i</sub> + ε<sub>i</sub>, with independent ε<sub>i</sub> ∼ N(0, γ²), even for N = ∞; the MSE is measured against the <em>noiseless</em> target Tr(σO). The fit is the minimum-norm Moore–Penrose solution w = (P<sup>T</sup>)<sup>+</sup>y<sub>observed</sub>, computed by a direct one-sided Jacobi SVD (not normal equations). No ridge regularization is applied; rcond only truncates numerically zero singular values.<br>
+    The default plotted sample for each training realization is the <em>test-shot-averaged MSE</em>: <span class="formula">(w·pσ − yσ)² + [Σₐ pσ,ₐ wₐ² − (w·pσ)²]/M</span>. Thus the finite M contribution is included exactly, without extra Monte Carlo scatter. “Sample test shots” instead draws one measured frequency vector per realization, except in Haar-average mode where exact integration is enforced. The Haar-average mode uses the pure-state second moment E[O⊗O]=(I+SWAP)/[d(d+1)] and performs the exact O, σ and independent Gaussian label-noise averages <em>conditional on each training dataset, POVM and estimated P</em>; finite-M test-shot variance is also included analytically. For depolarization λ the test state is (1−λ)|ψ⟩⟨ψ|+λI/d, with |ψ⟩ Haar pure. Only the training states, POVM and N-shot training noise are Monte Carlo sampled in this mode. Mean/median refer to the distribution of these <em>conditional Haar-averaged MSEs</em>, not the distribution of individual random test errors. Training uses either genuine multinomial frequencies or Gaussian noise with covariance (diag p − ppᵀ)/N, including its sum-to-one constraint. All draws use a seeded pseudorandom generator. Mean and median aggregate <em>per-realization squared errors</em>, not squared mean predictions. The rank-one-POVM domain requires n_out ≥ d. The outcome and training ranges are independently editable in integer counts or multiples of d². Sample density can be any positive safe integer, or every physically admissible integer in the chosen domain; parameter inputs are not subject to arbitrary upper caps. The separate plot-axis controls optionally fix the displayed n_out, n_tr and raw-MSE ranges independently of the computed domain. A fixed MSE range also fixes the heatmap/3D color limits; log plots transform those raw bounds. The physical restrictions d ≥ 2, n_out ≥ d, n_tr ≥ 1, N and M ≥ 1, γ ≥ 0, and 0 ≤ λ ≤ 1 remain. Counts and random seeds are limited to exactly represented JavaScript integers, and the pseudorandom generator uses the seed modulo 2³². The background grid uses <em>distinct integer</em> counts, spaced as uniformly as integer counts allow; each axis is capped by its own number of admissible counts. When the sample count permits, the d² coordinate is retained on each axis if it lies in the selected range. Horizontal slices fix n_tr and vary n_out; vertical slices fix n_out and vary n_tr. Slice mode computes only the selected rows or columns, and multiple fixed values can be compared on one plot. When enabled, critical scans separately evaluate <em>every integer</em> on n_out = n_tr, n_out = d², and n_tr = d² within the domain, plus one-count neighbors; slices sample the corresponding intersections and their neighbors. Circles on the joined surface/heatmap mark scans, including off-grid samples. The 3D joined surface linearly connects adjacent background grid values. The <em>3D discrete bars</em> mode draws every computed integer pair, including critical scans, without interpolating bar heights. Bar footprints meet at midpoint boundaries between neighboring outcome columns and, within each column, neighboring training counts. Sparse sampling therefore produces wider bars, while each height remains the statistic evaluated at its sampled integer pair. Color stretch may be robust (2nd–98th percentiles) or full range; neither alters reported MSE. Log colors floor positive values at 10<sup>−20</sup>.<br>
+    Near n_tr ≈ n_out, single-experiment errors can be heavy-tailed, making the sample mean sensitive to the realization count. The IC line n_out = d² and the training-span line n_tr = d² delimit exact-reconstruction capacity, but do not guarantee a small error at finite shots. At large d, fine grids and many realizations require significant CPU work. The test-depolarization slider changes only σ, not the pure training ensemble. The Haar-average mode treats Gaussian training-label noise analytically, even when γ ≠ 0; the original fixed/redrawn modes continue sampling label noise.
+        </div>
+      </details>
+      <div class="footLinks">Sources: <a href="https://www.nature.com/articles/s42005-023-01233-w" target="_blank" rel="noopener">Communications Physics (2023)</a> · <a href="https://arxiv.org/abs/2610.12015" target="_blank" rel="noopener">arXiv:2610.12015 (2026)</a></div>
+    </div>
+  </div>
+
+<!-- External Plotly is loaded by the application (primary CDN plus fallback).
+     The rest of this file, including the simulation worker, is self-contained.
+     No ES modules or build tools are required, including for file:// use. -->
+
+<!-- Simulation kernel: same mathematical algorithm, random streams, and results;
+     repeated array-prefix copies have been removed from the fit loop. -->
+<script id="workerSource" type="text/plain">
+'use strict';
+
+// Deterministic PRNG; distinct streams for frames, states, and shot noise.
+function mixSeed(a, b, c) {
+  let x = ((a >>> 0) ^ Math.imul((b + 0x9e3779b9) | 0, 0x85ebca6b) ^ Math.imul((c + 0x27d4eb2d) | 0, 0xc2b2ae35)) >>> 0;
+  x ^= x >>> 16; x = Math.imul(x, 0x7feb352d) >>> 0;
+  x ^= x >>> 15; x = Math.imul(x, 0x846ca68b) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0;
+}
+class RNG {
+  constructor(seed) { this.s = seed >>> 0 || 0x12345678; this.spare = null; }
+  uniform() { let x = this.s; x ^= x << 13; x ^= x >>> 17; x ^= x << 5; this.s = x >>> 0; return (this.s + 0.5) / 4294967296; }
+  normal() {
+    if (this.spare !== null) { const z=this.spare; this.spare=null; return z; }
+    const r=Math.sqrt(-2*Math.log(this.uniform()));
+    const t=2*Math.PI*this.uniform(); this.spare=r*Math.sin(t); return r*Math.cos(t);
+  }
+}
+function samplePure(d,rng) {
+  const re=new Float64Array(d), im=new Float64Array(d); let norm=0;
+  for (let j=0;j<d;j++){ const a=rng.normal(),b=rng.normal(); re[j]=a; im[j]=b; norm+=a*a+b*b; }
+  const inv=1/Math.sqrt(norm); for(let j=0;j<d;j++){re[j]*=inv; im[j]*=inv;}
+  return {re,im};
+}
+function overlapSq(a,b) {
+  let r=0,im=0;
+  for(let j=0;j<a.re.length;j++) {r+=a.re[j]*b.re[j]+a.im[j]*b.im[j]; im+=a.re[j]*b.im[j]-a.im[j]*b.re[j];}
+  return r*r+im*im;
+}
+// Haar-isometric frame Q, Q^dagger Q = I_d. Effects E_a = Q^dagger |a><a| Q are rank one.
+function frame(m,d,rng) {
+  const columns=[];
+  for(let j=0;j<d;j++) {
+    const re=new Float64Array(m), im=new Float64Array(m);
+    for(let a=0;a<m;a++){re[a]=rng.normal(); im[a]=rng.normal();}
+    for(let pass=0;pass<2;pass++) for(let k=0;k<j;k++) {
+      const prev=columns[k]; let cr=0,ci=0;
+      for(let a=0;a<m;a++) { cr+=prev.re[a]*re[a]+prev.im[a]*im[a]; ci+=prev.re[a]*im[a]-prev.im[a]*re[a]; }
+      for(let a=0;a<m;a++){ re[a]-=prev.re[a]*cr-prev.im[a]*ci; im[a]-=prev.re[a]*ci+prev.im[a]*cr; }
+    }
+    let n2=0; for(let a=0;a<m;a++) n2+=re[a]*re[a]+im[a]*im[a];
+    const inv=1/Math.sqrt(n2); for(let a=0;a<m;a++){re[a]*=inv;im[a]*=inv;}
+    columns.push({re,im});
+  }
+  return columns;
+}
+function frameProb(columns,psi) {
+  const m=columns[0].re.length, d=columns.length, p=new Float64Array(m);
+  let total=0;
+  for(let a=0;a<m;a++){
+    let rr=0,ii=0;
+    for(let j=0;j<d;j++){
+      const cr=columns[j].re[a],ci=columns[j].im[a];
+      rr+=cr*psi.re[j]-ci*psi.im[j]; ii+=cr*psi.im[j]+ci*psi.re[j];
+    }
+    p[a]=rr*rr+ii*ii;total+=p[a];
+  }
+  // Removes at most floating-point roundoff from the Gram-Schmidt normalization.
+  for(let a=0;a<m;a++)p[a]/=total;
+  return p;
+}
+function mixedProb(frameCols,psi,mix){
+  const p=frameProb(frameCols,psi);
+  if(mix>0){const m=p.length,d=frameCols.length;
+    for(let a=0;a<m;a++) {let norm=0;for(let j=0;j<d;j++){const col=frameCols[j];norm+=col.re[a]*col.re[a]+col.im[a]*col.im[a];}
+      p[a]=(1-mix)*p[a]+mix*norm/d;
+    }
+  }
+  return p;
+}
+function lgamma(z) {
+  const q=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.984369578019572e-6,1.5056327351493116e-7];
+  if(z<0.5) return Math.log(Math.PI)-Math.log(Math.sin(Math.PI*z))-lgamma(1-z);
+  z-=1;let x=q[0];for(let i=1;i<9;i++)x+=q[i]/(z+i);
+  const t=z+7.5;return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+// Exact binomial inverse-by-probability-mass search, started at the mode.
+// Complexity near O(sqrt(n p (1-p))) rather than O(n) for large shot budgets.
+function binomial(n,p,rng) {
+  if(n<=0||p<=0)return 0; if(p>=1)return n;
+  if(p>0.5)return n-binomial(n,1-p,rng);
+  if(n*p<24){ // exact geometric interarrival implementation for sparse successes
+    let successes=0,pos=0,logq=Math.log1p(-p);
+    while(pos<n){pos+=1+Math.floor(Math.log(rng.uniform())/logq);if(pos<=n)successes++;}
+    return successes;
+  }
+  const k=Math.floor((n+1)*p),q=1-p;
+  let prob=Math.exp(lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1)+k*Math.log(p)+(n-k)*Math.log1p(-p));
+  let u=rng.uniform(); if(u<prob)return k;u-=prob;
+  let left=prob,right=prob;
+  for(let s=1;s<=n;s++){
+    if(k-s>=0){const from=k-s+1;left*=from/(n-from+1)*q/p;
+      if(u<left)return k-s;u-=left;
+    }
+    if(k+s<=n){const from=k+s-1;right*=(n-from)/(from+1)*p/q;
+      if(u<right)return k+s;u-=right;
+    }
+    if((k-s<0)&&(k+s>n))break;
+  }
+  // Only reachable in extreme floating-point roundoff in computing the modal mass.
+  return Math.min(n,Math.max(0,k));
+}
+function sampleProb(p,shots,model,rng){
+  const m=p.length;
+  if(shots===null)return p;
+  const out=new Float64Array(m);
+  if(model==='gaussian'){
+    const v=new Float64Array(m); let total=0;
+    for(let a=0;a<m;a++){v[a]=Math.sqrt(Math.max(0,p[a]))*rng.normal();total+=v[a];}
+    const fac=1/Math.sqrt(shots);
+    for(let a=0;a<m;a++)out[a]=p[a]+fac*(v[a]-p[a]*total);
+    return out;
+  }
+  let rem=shots,mass=1;
+  for(let a=0;a<m-1;a++){
+    const pr=mass>0?Math.max(0,Math.min(1,p[a]/mass)):0;
+    const k=binomial(rem,pr,rng);
+    out[a]=k/shots; rem-=k;mass-=p[a];
+  }
+  out[m-1]=rem/shots;
+  return out;
+}
+function dot(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s;}
+
+// Coordinates in an orthonormal REAL Hilbert-Schmidt basis of Hermitian matrices:
+// diagonal entries followed by sqrt(2) Re/Im of upper-triangle entries.
+// Their Euclidean dot product is exactly Tr(A B).
+function pureFeatures(psi){
+  const d=psi.re.length,f=new Float64Array(d*d),sqrt2=Math.SQRT2;
+  for(let j=0;j<d;j++)f[j]=psi.re[j]*psi.re[j]+psi.im[j]*psi.im[j];
+  let k=d;
+  for(let j=0;j<d;j++)for(let l=j+1;l<d;l++){
+    f[k++]=sqrt2*(psi.re[j]*psi.re[l]+psi.im[j]*psi.im[l]);
+    f[k++]=sqrt2*(psi.im[j]*psi.re[l]-psi.re[j]*psi.im[l]);
+  }
+  return f;
+}
+function frameFeatures(columns){
+  const d=columns.length,m=columns[0].re.length,sqrt2=Math.SQRT2;
+  const effects=new Array(m),traces=new Float64Array(m);
+  for(let a=0;a<m;a++){
+    const f=new Float64Array(d*d);
+    for(let j=0;j<d;j++){
+      const re=columns[j].re[a],im=columns[j].im[a];
+      traces[a]+=f[j]=re*re+im*im;
+    }
+    let k=d;
+    for(let j=0;j<d;j++)for(let l=j+1;l<d;l++){
+      const rj=columns[j].re[a],ij=columns[j].im[a];
+      const rl=columns[l].re[a],il=columns[l].im[a];
+      f[k++]=sqrt2*(rj*rl+ij*il);
+      f[k++]=sqrt2*(rj*il-ij*rl);
+    }
+    effects[a]=f;
+  }
+  return {effects,traces};
+}
+// E_O [ ||X o||^2 ] = (||X||_F^2 + ||X i||^2)/[d(d+1)],
+// E_O [ (i^T X o)^2 ] = (||i^T X||^2 + (i^T X i)^2)/[d(d+1)]
+// where i represents the identity and o the Haar-random rank-one projector.
+function haarMatrixMoments(mat,d,subtractIdentity){
+  const D=d*d,colTrace=new Float64Array(D);
+  let squared=0,rowTraceSq=0;
+  for(let k=0;k<D;k++){
+    let rowTrace=0;const row=mat[k];
+    for(let j=0;j<D;j++){
+      const a=row[j]-(subtractIdentity&&j===k?1:0);
+      squared+=a*a;
+      if(j<d)rowTrace+=a;
+      if(k<d)colTrace[j]+=a;
+    }
+    rowTraceSq+=rowTrace*rowTrace;
+  }
+  let colTraceSq=0,traceTrace=0;
+  for(let j=0;j<D;j++){
+    colTraceSq+=colTrace[j]*colTrace[j];
+    if(j<d)traceTrace+=colTrace[j];
+  }
+  return {hs:squared+rowTraceSq,tr:colTraceSq+traceTrace*traceTrace};
+}
+// Fully analytic Haar average over both target O and test sigma, and over
+// independent Gaussian label noise. The training states, frame and noisy P
+// remain fixed for this calculation. lambda=1 is maximally mixed sigma.
+function haarConditionalError(B, aRowNormSq, noiseHsSq, noiseTraceSq, cfg){
+  const {effects,traces,d,gamma,M,mix}=cfg,D=d*d,m=B.length;
+  const L=Array.from({length:D},()=>new Float64Array(D));
+  let expectedWeightedW2=0;
+  const denom=d*(d+1),gammaSq=gamma*gamma;
+  for(let a=0;a<m;a++){
+    const b=B[a],e=effects[a];let norm=0,tr=0;
+    for(let k=0;k<D;k++){
+      norm+=b[k]*b[k];if(k<d)tr+=b[k];
+      const ea=e[k];
+      if(ea!==0){const row=L[k];for(let j=0;j<D;j++)row[j]+=ea*b[j];}
+    }
+    expectedWeightedW2+=traces[a]/d*((norm+tr*tr)/denom+gammaSq*aRowNormSq[a]);
+  }
+  const Hmom=haarMatrixMoments(L,d,true);
+  const Lmom=haarMatrixMoments(L,d,false);
+  const a=(1-mix)*(1-mix)/denom;
+  const b=a+mix*(2-mix)/(d*d);
+  const noise=a*noiseHsSq+b*noiseTraceSq;
+  const bias=Math.max(0,(a*Hmom.hs+b*Hmom.tr)/denom+gammaSq*noise);
+  const expectedPredSq=(a*Lmom.hs+b*Lmom.tr)/denom+gammaSq*noise;
+  // Finite-M variance is exact for categorical test measurements, not Gaussianized.
+  const rawVar=M===null?0:(expectedWeightedW2-expectedPredSq)/M;
+  // Eliminate only floating-point roundoff: the exact expectation is >= 0.
+  const shot=M===null?0:Math.max(0,rawVar);
+  return {bias,shot};
+}
+
+// One-sided Jacobi SVD applied to A (training rows x output columns).
+// Computes min-norm least-squares solution A^+y without forming A^T A,
+// preserving small singular values and handling both tall/wide matrices.
+// rowCount makes a prefix view without copying the list of sampled rows.
+function solvePseudo(rows,y,rcond,haar=null,rowCount=rows.length){
+  const m=rowCount,n=rows[0].length,flip=m<n;
+  const nr=flip?n:m,nc=flip?m:n;
+  const C=new Array(nc),V=new Array(nc);
+  for(let j=0;j<nc;j++){
+    const col=new Float64Array(nr),v=new Float64Array(nc);v[j]=1;
+    if(flip){const src=rows[j];for(let i=0;i<nr;i++)col[i]=src[i];}
+    else{for(let i=0;i<nr;i++)col[i]=rows[i][j];}
+    C[j]=col;V[j]=v;
+  }
+  const tol=1.5e-13;
+  let sweeps=0;
+  for(;sweeps<28;sweeps++){
+    let rotations=0;
+    for(let p=0;p<nc-1;p++){
+      const cp=C[p],vp=V[p];
+      for(let q=p+1;q<nc;q++){
+        const cq=C[q],vq=V[q];let alpha=0,beta=0,gamma=0;
+        for(let i=0;i<nr;i++){const x=cp[i],z=cq[i];alpha+=x*x;beta+=z*z;gamma+=x*z;}
+        if(alpha===0||beta===0||Math.abs(gamma)<=tol*Math.sqrt(alpha*beta))continue;
+        const zeta=(beta-alpha)/(2*gamma);
+        const t=(zeta>=0?1:-1)/(Math.abs(zeta)+Math.hypot(1,zeta));
+        const c=1/Math.sqrt(1+t*t),s=c*t;
+        for(let i=0;i<nr;i++){const x=cp[i],z=cq[i];cp[i]=c*x-s*z;cq[i]=s*x+c*z;}
+        for(let i=0;i<nc;i++){const x=vp[i],z=vq[i];vp[i]=c*x-s*z;vq[i]=s*x+c*z;}
+        rotations++;
+      }
+    }
+    if(!rotations)break;
+  }
+  const ss=new Float64Array(nc);let maxS=0;
+  for(let j=0;j<nc;j++){ss[j]=dot(C[j],C[j]);if(ss[j]>maxS)maxS=ss[j];}
+  const threshold=maxS*rcond*rcond;
+  let minS=Infinity,rank=0;
+  const w=haar?null:new Float64Array(n);
+  const D=haar?haar.d*haar.d:0;
+  const B=haar?Array.from({length:n},()=>new Float64Array(D)):null;
+  const rowA2=haar?new Float64Array(n):null;
+  let noiseHsSq=0,noiseTraceSq=0;
+  for(let j=0;j<nc;j++){
+    if(!(ss[j]>threshold))continue;
+    rank++;minS=Math.min(minS,ss[j]);
+    // For every retained SVD mode, A^+ includes vecOut * vecTrain^T / s_j^2.
+    // Exactly one of the two vectors is unnormalized (its squared norm s_j^2).
+    const vecTrain=flip?V[j]:C[j],vecOut=flip?C[j]:V[j],invS2=1/ss[j];
+    if(!haar){
+      const coeff=dot(vecTrain,y)*invS2;
+      for(let a=0;a<n;a++)w[a]+=coeff*vecOut[a];
+      continue;
+    }
+    // B = (P^T)^+ U, where U_i contains the Hermitian coordinates of rho_i.
+    const trainMoment=new Float64Array(D),effectMoment=new Float64Array(D);
+    for(let i=0;i<m;i++){
+      const c=vecTrain[i],u=haar.trainingFeatures[i];
+      for(let k=0;k<D;k++)trainMoment[k]+=c*u[k];
+    }
+    for(let a=0;a<n;a++){
+      const c=vecOut[a],row=B[a],e=haar.effects[a];
+      for(let k=0;k<D;k++){
+        row[k]+=c*trainMoment[k]*invS2;
+        effectMoment[k]+=c*e[k];
+      }
+    }
+    // The left singular vectors are orthogonal: gamma^2 covariance can be
+    // integrated without constructing the entire nOut x nTr pseudoinverse.
+    const factor=(flip?1:ss[j])*invS2*invS2;
+    let norm=0,tr=0;
+    for(let k=0;k<D;k++){
+      norm+=effectMoment[k]*effectMoment[k];
+      if(k<haar.d)tr+=effectMoment[k];
+    }
+    noiseHsSq+=factor*norm;
+    noiseTraceSq+=factor*tr*tr;
+    for(let a=0;a<n;a++)rowA2[a]+=factor*vecOut[a]*vecOut[a];
+  }
+  const info={rank,condition:rank>0?Math.sqrt(maxS/minS):Infinity,sweeps};
+  if(haar)return {...info,...haarConditionalError(B,rowA2,noiseHsSq,noiseTraceSq,haar)};
+  return {...info,w};
+}
+function predictStats(w,p,y,M){
+  const predicted=dot(w,p),bias=(predicted-y)**2;
+  let m2=0;for(let a=0;a<w.length;a++)m2+=p[a]*w[a]*w[a];
+  const shot=M===null?0:Math.max(0,m2-predicted*predicted)/M;
+  return {predicted,bias,shot};
+}
+function run(settings,send){
+  const {d,tasks,N,M,shotModel,testMode,R,seed,rcond,mix,resamplePair,haarPair,gamma}=settings;
+  const seed0=seed>>>0;
+  const fixedRng=new RNG(mixSeed(seed0,701,23));
+  const fixedTarget=samplePure(d,fixedRng),fixedSigma=samplePure(d,fixedRng);
+  for(let ix=0;ix<tasks.length;ix++){
+    const {nOut,nTrs}=tasks[ix];
+    const maxTr=nTrs[nTrs.length-1];
+    const col=nTrs.map(()=>({loss:[],bias:[],testVar:[],rank:[],condition:[]}));
+    for(let r=0;r<R;r++){
+      const pairRng = new RNG(mixSeed(seed0,701,r+24));
+      const target=resamplePair?samplePure(d,pairRng):fixedTarget;
+      const sigma=resamplePair?samplePure(d,pairRng):fixedSigma;
+      const truth=(1-mix)*overlapSq(target,sigma)+mix/d;
+      const rngStates=new RNG(mixSeed(seed0,1103,r+1));
+      // Outcome-independent label noise, shared across nOut for the same realization.
+      const rngLabels=gamma>0?new RNG(mixSeed(seed0,3701,r+1)):null;
+      const rngPOVM=new RNG(mixSeed(seed0,2297,Math.imul(nOut,1009)+r));
+      const rngShots=new RNG(mixSeed(seed0,3533,Math.imul(nOut,1009)+r));
+      const rngTest=new RNG(mixSeed(seed0,4969,Math.imul(nOut,1009)+r));
+      const Q=frame(nOut,d,rngPOVM);
+      const pSig=haarPair?null:mixedProb(Q,sigma,mix);
+      const pSigSample=(!haarPair&&M!==null&&testMode==='sample')?sampleProb(pSig,M,shotModel,rngTest):null;
+      const frameData=haarPair?frameFeatures(Q):null;
+      const rows=new Array(maxTr),labels=haarPair?null:new Float64Array(maxTr);
+      const trainingFeatures=haarPair?new Array(maxTr):null;
+      for(let it=0;it<maxTr;it++){
+        const psi=samplePure(d,rngStates);
+        if(haarPair)trainingFeatures[it]=pureFeatures(psi);
+        else labels[it]=overlapSq(target,psi)+(rngLabels?gamma*rngLabels.normal():0);
+        rows[it]=sampleProb(frameProb(Q,psi),N,shotModel,rngShots);
+      }
+      // Reuse the complete arrays and one Haar context: the solver reads
+      // precisely the first nt rows and labels at each requested count.
+      const haar=haarPair?{...frameData,trainingFeatures,d,gamma,M,mix}:null;
+      for(let iy=0;iy<nTrs.length;iy++){
+        const nt=nTrs[iy];
+        const ans=solvePseudo(rows,haarPair?null:labels,rcond,haar,nt);
+        const ps=haarPair?{bias:ans.bias,shot:ans.shot}:predictStats(ans.w,pSig,truth,M);
+        const loss=pSigSample?(dot(ans.w,pSigSample)-truth)**2:ps.bias+ps.shot;
+        col[iy].loss.push(loss);col[iy].bias.push(ps.bias);
+        col[iy].testVar.push(ps.shot);col[iy].rank.push(ans.rank);
+        col[iy].condition.push(ans.condition);
+      }
+    }
+    send({type:'column',nOut,nTrs,column:col,done:ix+1,total:tasks.length});
+  }
+  send({type:'complete'});
+}
+if(typeof self!=='undefined' && typeof self.postMessage==='function'){
+  self.onmessage=function(event){
+    if(event.data.type!=='run')return;
+    try{run(event.data.settings,msg=>self.postMessage(msg));}
+    catch(err){self.postMessage({type:'error',message:err.message,stack:err.stack});}
+  };
+}
+
+</script>
+
+<script id="qelmApp">
+(() => {
+'use strict';
+/*
+ * Single-file architecture
+ * ------------------------
+ * Worker source  : deterministic simulation and pseudoinverse fits (no DOM).
+ * Domain         : input validation, integer sampling, and critical-scan plans.
+ * Statistics     : cached aggregates and stable formatting.
+ * Canvas3D       : software 3D, hit testing, and pointer interactions.
+ * PlotView       : Plotly traces/layouts and asynchronous draw scheduling.
+ * Controller     : form state, worker lifetime, export, and application startup.
+ *
+ * The two dependencies are standard browser APIs (including Blob Workers) and
+ * externally loaded, version-pinned Plotly. No framework or build step needed.
+ */
+
+// Shared application state. The numerical kernel runs in a dedicated worker.
+// The page is static, so cache DOM lookups on their first use.
+const elements = new Map();
+function $(id) {
+  if (!elements.has(id)) elements.set(id, document.getElementById(id));
+  return elements.get(id);
+}
+const plotEl = $('plot');
+const display = {
+  stat: 'median', view: '2d', scale: 'log', colorRange: 'robust', threeStyle: 'surface',
+};
+const colorScale = [
+  [0, '#122440'], [0.10, '#17315d'], [0.25, '#28569e'], [0.42, '#258b9a'],
+  [0.60, '#47bba2'], [0.77, '#a9dc83'], [0.90, '#f3c86d'], [1, '#ed805e'],
+];
+const sliceColors = ['#64d9dc', '#f2af72', '#aca6fa', '#a9dc83', '#fb808a', '#79b5ff', '#e3a3d8', '#e6d677'];
+// Positive safe integer counts are the JS/array-index contract, not an arbitrary
+// simulation cap. Expensive configurations are reported, not silently truncated.
+
+let worker = null;
+let workerUrl = null;
+let timer = null;
+let settings = null;
+let results = new Map();
+let summaryCache = new WeakMap();
+let loaded = 0;
+let pin = null;
+let shown = null;
+let initialPlot = false;
+let started = 0;
+let runId = 0;
+let axisRevision = 0;
+
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const pointKey = (nOut, nTr) => `${nOut}:${nTr}`;
+const getCell = (nOut, nTr) => results.get(pointKey(nOut, nTr));
+const inRange = (value, range) => value >= range[0] && value <= range[1];
+const valueForPlot = (value) => display.scale === 'log' ? Math.log10(Math.max(value, 1e-20)) : value;
+
+// ---------------- Domain & task planning ----------------
+// Private helpers ensure every axis, slice and critical scan uses one contract.
+const Domain = (() => {
+function numberVal(id, min, max, label = id, integer = false) {
+  const text = $(id).value.trim();
+  const value = Number(text);
+  if (!text || !Number.isFinite(value)) throw new Error(`Enter a valid number for ${label}.`);
+  if (value < min || value > max) {
+    const bound = Number.isFinite(max) ? `between ${min} and ${max}` : `at least ${min}`;
+    throw new Error(`${label} must be ${bound}.`);
+  }
+  if (integer && !Number.isSafeInteger(value)) throw new Error(`${label} must be a whole number.`);
+  return value;
+}
+
+// Floating-point tolerances only undo count/d² conversion roundoff at integers.
+function integerTolerance(value) {
+  return 16 * Number.EPSILON * Math.max(1, Math.abs(value));
+}
+
+function displayRange(min, max, d2) {
+  return min === max ? [(min - 0.5) / d2, (max + 0.5) / d2] : [min / d2, max / d2];
+}
+
+function readAxisRange(minId, maxId, label, minimumCount, factor, d2) {
+  const requestedMin = numberVal(minId, 0, Infinity, `${label} minimum`) * factor;
+  const requestedMax = numberVal(maxId, 0, Infinity, `${label} maximum`) * factor;
+  if (requestedMin > requestedMax) throw new Error(`${label} minimum must not exceed its maximum.`);
+  const min = Math.max(minimumCount, Math.ceil(requestedMin - integerTolerance(requestedMin)));
+  const max = Math.floor(requestedMax + integerTolerance(requestedMax));
+  if (!Number.isSafeInteger(min) || !Number.isSafeInteger(max)) {
+    throw new Error(`${label} bounds must convert to safe integer counts.`);
+  }
+  if (min > max) throw new Error(`${label} range contains no integer counts; the minimum allowed count is ${minimumCount}.`);
+  return { min, max, requestedMin, requestedMax, plotRange: displayRange(requestedMin, requestedMax, d2) };
+}
+
+function readSliceValues(factor, minimumCount, label) {
+  const text = $('sliceValues').value.trim();
+  if (!text) throw new Error(`Enter at least one fixed ${label} value.`);
+  const values = text.split(/[\s,;]+/).filter(Boolean).map((token) => {
+    const value = Number(token);
+    const count = Math.round(value * factor);
+    if (!Number.isFinite(value) || value < 0 || !Number.isSafeInteger(count) || count < minimumCount) {
+      throw new Error(`Each ${label} slice must round to an integer count of at least ${minimumCount}.`);
+    }
+    return count;
+  });
+  return [...new Set(values)].sort((a, b) => a - b);
+}
+
+function fixedAxisRange(values, d2) {
+  const min = values[0], max = values[values.length - 1];
+  return { min, max, requestedMin: min, requestedMax: max, plotRange: displayRange(min, max, d2) };
+}
+
+function axisIntegers(min, max, density, anchor) {
+  const count = Math.min(max - min + 1, density);
+  if (count > 0xFFFFFFFF) throw new Error('A JavaScript array cannot contain this many distinct integer samples.');
+  if (count === 1) return [Math.round((min + max) / 2)];
+  const values = Array.from({ length: count }, (_, i) => Math.round(min + (max - min) * i / (count - 1)));
+  // Keep both requested endpoints and, when possible, the d² threshold.
+  if (count >= 3 && anchor > min && anchor < max && !values.includes(anchor)) {
+    let nearest = 1;
+    for (let i = 2; i < count - 1; i++) {
+      if (Math.abs(values[i] - anchor) < Math.abs(values[nearest] - anchor)) nearest = i;
+    }
+    values[nearest] = anchor;
+  }
+  return values.sort((a, b) => a - b);
+}
+
+function readDomain() {
+  const d = numberVal('dimension', 2, Infinity, 'Hilbert dimension d', true);
+  const d2 = d * d;
+  if (!Number.isSafeInteger(d2)) throw new Error('d² must fit in the exact integer range supported by JavaScript.');
+  const allCounts = $('allCounts').checked;
+  const density = allCounts ? Number.MAX_SAFE_INTEGER : numberVal('resolution', 1, Infinity, 'Samples per axis', true);
+  const plotMode = $('plotMode').value;
+  const rangeUnits = $('rangeUnits').value;
+  const factor = rangeUnits === 'normalized' ? d2 : 1;
+  const fixedValues = plotMode === 'map' ? [] : readSliceValues(factor, plotMode === 'vertical' ? d : 1, plotMode === 'vertical' ? 'n_out' : 'n_tr');
+  const outBounds = plotMode === 'vertical' ? fixedAxisRange(fixedValues, d2) : readAxisRange('outMin', 'outMax', 'Outcome', d, factor, d2);
+  const trBounds = plotMode === 'horizontal' ? fixedAxisRange(fixedValues, d2) : readAxisRange('trMin', 'trMax', 'Training', 1, factor, d2);
+  const nOuts = plotMode === 'vertical' ? fixedValues : axisIntegers(outBounds.min, outBounds.max, density, d2);
+  const nTrs = plotMode === 'horizontal' ? fixedValues : axisIntegers(trBounds.min, trBounds.max, density, d2);
+  return {
+    d, density, allCounts, plotMode, rangeUnits, fixedValues, outBounds, trBounds, nOuts, nTrs,
+    xRange: outBounds.plotRange, yRange: trBounds.plotRange,
+    includeCritical: $('criticalScans').checked,
+  };
+}
+
+function buildTaskPlan(domain) {
+  const { d, nOuts, nTrs, outBounds, trBounds, plotMode, fixedValues, includeCritical } = domain;
+  const d2 = d * d;
+  const baseX = new Set(nOuts), baseY = new Set(nTrs);
+  const byOutcome = new Map(), exact = new Map(), near = new Map();
+  const isBase = (no, nt) => baseX.has(no) && baseY.has(nt);
+
+  function add(no, nt, kind) {
+    if (no < outBounds.min || no > outBounds.max || nt < trBounds.min || nt > trBounds.max) return;
+    if (plotMode === 'horizontal' && !baseY.has(nt)) return;
+    if (plotMode === 'vertical' && !baseX.has(no)) return;
+    if (!byOutcome.has(no)) byOutcome.set(no, new Set());
+    byOutcome.get(no).add(nt);
+    const key = pointKey(no, nt), point = { no, nt };
+    if (kind === 'exact') { exact.set(key, point); near.delete(key); }
+    else if (kind === 'near' && !exact.has(key)) near.set(key, point);
+  }
+
+  for (const no of nOuts) for (const nt of nTrs) add(no, nt);
+  if (includeCritical) {
+    const outLength = outBounds.max - outBounds.min + 1;
+    const trLength = trBounds.max - trBounds.min + 1;
+    const hasOutThreshold = d2 >= outBounds.min && d2 <= outBounds.max;
+    const hasTrThreshold = d2 >= trBounds.min && d2 <= trBounds.max;
+    const diagonalLength = Math.max(0, Math.min(outBounds.max, trBounds.max) - Math.max(outBounds.min, trBounds.min) + 1);
+    // Critical scans always cover the exact requested domain; no fixed point cap.
+    // Huge scans may be costly, so the UI exposes the point and fit counts.
+    if (plotMode === 'map') {
+      for (let k = Math.max(outBounds.min, trBounds.min); k <= Math.min(outBounds.max, trBounds.max); k++) add(k, k, 'exact');
+      if (hasTrThreshold) for (let no = outBounds.min; no <= outBounds.max; no++) add(no, d2, 'exact');
+      if (hasOutThreshold) for (let nt = trBounds.min; nt <= trBounds.max; nt++) add(d2, nt, 'exact');
+      for (const no of nOuts) {
+        add(no, no - 1, 'near'); add(no, no + 1, 'near');
+        add(no, d2 - 1, 'near'); add(no, d2 + 1, 'near');
+      }
+      for (const nt of nTrs) { add(d2 - 1, nt, 'near'); add(d2 + 1, nt, 'near'); }
+    } else {
+      // A slice intersects the same physical thresholds; no off-slice fits are added.
+      for (const fixed of fixedValues) {
+        const horizontal = plotMode === 'horizontal';
+        const bounds = horizontal ? outBounds : trBounds;
+        const addVarying = (value, kind) => horizontal ? add(value, fixed, kind) : add(fixed, value, kind);
+        if (fixed === d2) for (let value = bounds.min; value <= bounds.max; value++) addVarying(value, 'exact');
+        for (const threshold of [d2, fixed]) {
+          addVarying(threshold, 'exact');
+          addVarying(threshold - 1, 'near'); addVarying(threshold + 1, 'near');
+        }
+      }
+    }
+  }
+  const tasks = [...byOutcome].map(([nOut, counts]) => ({ nOut, nTrs: [...counts].sort((a, b) => a - b) }));
+  // Preserve the original ordering: background columns arrive before scan-only ones.
+  tasks.sort((a, b) => Number(!baseX.has(a.nOut)) - Number(!baseX.has(b.nOut)) || a.nOut - b.nOut);
+  return {
+    tasks, gridCount: nOuts.length * nTrs.length,
+    pointCount: tasks.reduce((sum, task) => sum + task.nTrs.length, 0),
+    scanExact: [...exact.values()],
+    scanNear: [...near.values()].filter((point) => !isBase(point.no, point.nt)),
+    exactKeys: new Set(exact.keys()), nearKeys: new Set(near.keys()),
+  };
+}
+
+function readSettings() {
+  const domain = readDomain();
+  const plan = buildTaskPlan(domain);
+  const R = numberVal('realizations', 1, Infinity, 'Realizations R', true);
+  const N = $('trainInf').classList.contains('active') ? null : numberVal('trainShots', 1, Infinity, 'Training shots N', true);
+  const M = $('testInf').classList.contains('active') ? null : numberVal('testShots', 1, Infinity, 'Inference shots M', true);
+  const gamma = $('labelNoiseEnabled').checked ? numberVal('gamma', 0, Infinity, 'Label-noise standard deviation γ') : 0;
+  const pairMode = $('pairs').value;
+  const shotModel = $('shotModel').value;
+  const testMode = pairMode === 'haar' ? 'analytic' : $('testMode').value;
+  const result = {
+    ...domain, ...plan, R, N, M, gamma, pairMode, shotModel, testMode,
+    mix: numberVal('mixExact', 0, 1, 'Test depolarization λ'),
+    rcond: numberVal('rcond', 0, Infinity, 'SVD rcond cutoff'),
+    seed: numberVal('seed', -Infinity, Infinity, 'Random seed', true),
+    resamplePair: pairMode === 'vary', haarPair: pairMode === 'haar',
+  };
+  // Bar geometry is computed lazily when the discrete-bars view is selected.
+  return result;
+}
+
+// Midpoint cells share exact boundaries. Their widths encode sampling spacing,
+// while their heights always come from one computed (n_out, n_tr) pair.
+function cellEdges(values, bounds) {
+  return [bounds[0], ...values.slice(1).map((value, i) => (values[i] + value) / 2), bounds[1]];
+}
+
+function sampledRange(axisBounds, d2) {
+  return [
+    Math.max(axisBounds.plotRange[0], (axisBounds.min - 0.5) / d2),
+    Math.min(axisBounds.plotRange[1], (axisBounds.max + 0.5) / d2),
+  ];
+}
+
+function buildBarCells(config) {
+  const d2 = config.d ** 2;
+  const tasks = [...config.tasks].sort((a, b) => a.nOut - b.nOut);
+  const edgesX = cellEdges(tasks.map((task) => task.nOut / d2), sampledRange(config.outBounds, d2));
+  const cells = new Map();
+  tasks.forEach((task, ix) => {
+    const edgesY = cellEdges(task.nTrs.map((count) => count / d2), sampledRange(config.trBounds, d2));
+    task.nTrs.forEach((nt, iy) => {
+      const key = pointKey(task.nOut, nt);
+      cells.set(key, {
+        no: task.nOut, nt, x: task.nOut / d2, y: nt / d2,
+        x0: edgesX[ix], x1: edgesX[ix + 1], y0: edgesY[iy], y1: edgesY[iy + 1],
+        kind: config.exactKeys.has(key) ? 'exact' : config.nearKeys.has(key) ? 'near' : 'grid',
+      });
+    });
+  });
+  return cells;
+}
+
+function getGuideLines(config, xRange = config.xRange, yRange = config.yRange) {
+  const [xmin, xmax] = xRange, [ymin, ymax] = yRange;
+  const lines = [];
+  if (inRange(1, xRange)) lines.push({ x: [1, 1], y: [ymin, ymax], color: '#64d9dc', dash: 'dash' });
+  if (inRange(1, yRange)) lines.push({ x: [xmin, xmax], y: [1, 1], color: '#f2af72', dash: 'dash' });
+  const min = Math.max(xmin, ymin), max = Math.min(xmax, ymax);
+  if (min < max) lines.push({ x: [min, max], y: [min, max], color: '#f2edf8', dash: 'dot' });
+  return lines;
+}
+
+  return { readDomain, readSettings, buildBarCells, cellEdges, sampledRange, getGuideLines };
+})();
+const { readDomain, readSettings, buildBarCells, cellEdges, sampledRange, getGuideLines } = Domain;
+
+// ---------------- Display-only plot axis ranges ----------------
+// Values are in physical MSE units and multiples of d²; switching between
+// log and linear converts the MSE limits without modifying their meaning.
+function plotAxisNumber(id) {
+  const input = $(id);
+  const raw = input.value.trim(), value = Number(raw);
+  if (!raw || !Number.isFinite(value)) throw new Error(`Enter a finite number for ${input.previousElementSibling?.textContent || id}.`);
+  return value;
+}
+
+function readPlotAxes() {
+  const countFixed = $('fixCountAxes').checked;
+  const mseFixed = $('fixMseAxis').checked;
+  let xRange = [...settings.xRange], yRange = [...settings.yRange], mseRange = null;
+  if (countFixed) {
+    xRange = [plotAxisNumber('axisOutMin'), plotAxisNumber('axisOutMax')];
+    yRange = [plotAxisNumber('axisTrMin'), plotAxisNumber('axisTrMax')];
+    if (!(xRange[1] > xRange[0]) || !(yRange[1] > yRange[0])) {
+      throw new Error('Fixed n_out and n_tr axis maxima must exceed their minima.');
+    }
+  }
+  if (mseFixed) {
+    const low = plotAxisNumber('axisMseMin'), high = plotAxisNumber('axisMseMax');
+    if (low < 0 || !(high > low)) throw new Error('Fixed MSE limits must satisfy 0 ≤ min < max.');
+    if (display.scale === 'log' && high <= 1e-20) {
+      throw new Error('Logarithmic MSE limits must extend above the 10⁻²⁰ display floor.');
+    }
+    mseRange = display.scale === 'log'
+      ? [Math.log10(Math.max(low, 1e-20)), Math.log10(Math.max(high, 1e-20))]
+      : [low, high];
+  }
+  return { xRange, yRange, mseRange, countFixed, mseFixed };
+}
+
+function syncAxisControls() {
+  $('countAxesFields').hidden = !$('fixCountAxes').checked;
+  $('mseAxisFields').hidden = !$('fixMseAxis').checked;
+}
+
+function updateAxisDisplay() {
+  syncAxisControls();
+  axisRevision++;
+  if (!settings) return;
+  try {
+    readPlotAxes();
+    showInputError();
+    requestDraw(30); // Changing the view never discards computed samples.
+  } catch (error) { showInputError(error.message); }
+}
+
+// ---------------- Ensemble aggregation ----------------
+const Statistics = (() => {
+function quantileSorted(values, q) {
+  if (!values.length) return NaN;
+  const position = (values.length - 1) * q, index = Math.floor(position), fraction = position - index;
+  const left = values[index], right = values[Math.min(index + 1, values.length - 1)];
+  if (fraction === 0 || left === right) return left;
+  return left * (1 - fraction) + right * fraction;
+}
+
+function summarize(cell) {
+  if (!cell || !cell.loss.length) return null;
+  let stats = summaryCache.get(cell);
+  if (!stats) {
+    let sum = 0, bias = 0, testVar = 0;
+    for (let i = 0; i < cell.loss.length; i++) {
+      sum += cell.loss[i]; bias += cell.bias[i]; testVar += cell.testVar[i];
+    }
+    const sorted = [...cell.loss].sort((a, b) => a - b);
+    stats = {
+      mean: sum / cell.loss.length, median: quantileSorted(sorted, 0.5),
+      q10: quantileSorted(sorted, 0.1), q90: quantileSorted(sorted, 0.9),
+      bias: bias / cell.loss.length, testVar: testVar / cell.loss.length,
+      condition: quantileSorted([...cell.condition].sort((a, b) => a - b), 0.5),
+      rank: quantileSorted([...cell.rank].sort((a, b) => a - b), 0.5),
+    };
+    summaryCache.set(cell, stats);
+  }
+  return { ...stats, value: stats[display.stat] };
+}
+
+function fmt(value) {
+  if (!Number.isFinite(value)) return value === Infinity ? '∞' : '—';
+  if (value === 0) return '0';
+  if (Math.abs(value) < 0.001 || Math.abs(value) >= 10000) return value.toExponential(2).replace('e+', 'e');
+  if (Math.abs(value) < 1) return value.toPrecision(3);
+  return value.toLocaleString('en-US', { maximumSignificantDigits: 4 });
+}
+
+  return { summarize, fmt, quantileSorted };
+})();
+const { summarize, fmt, quantileSorted } = Statistics;
+
+// ---------------- UI status & point inspection ----------------
+function setStatus(text, mode = 'normal') {
+  $('statusText').textContent = text;
+  $('statusPill').classList.toggle('busy', mode === 'busy');
+  $('statusPill').classList.toggle('error', mode === 'error');
+}
+
+function updateProgress(fraction, text) {
+  $('progressFill').style.width = `${(100 * clamp(fraction, 0, 1)).toFixed(1)}%`;
+  $('progressText').textContent = text;
+}
+
+function showInputError(message = '') {
+  $('inputError').textContent = message;
+  $('inputError').hidden = !message;
+}
+
+function resetInspector() {
+  $('selectionTitle').textContent = 'Inspect a point';
+  $('selectionSub').textContent = 'Move the cursor over the plot.';
+  for (const id of ['detailMse', 'detailBias', 'detailVar', 'detailCond']) $(id).textContent = '—';
+  $('detailQ').textContent = '10–90%: —';
+  $('detailRank').textContent = 'Median SVD rank: —';
+}
+
+function showCell(no, nt) {
+  if (!settings) return;
+  const stats = summarize(getCell(no, nt));
+  if (!stats) return;
+  shown = { no, nt };
+  $('selectionTitle').textContent = `n_out ${no} · n_tr ${nt}`;
+  const tags = [], d2 = settings.d ** 2;
+  if (no === nt) tags.push('diagonal');
+  if (no === d2) tags.push('IC');
+  if (nt === d2) tags.push('training threshold');
+  if (!tags.length && (Math.abs(no - nt) === 1 || Math.abs(no - d2) === 1 || Math.abs(nt - d2) === 1)) tags.push('±1 neighbor');
+  $('selectionSub').textContent = `(x, y) = (${(no / d2).toFixed(3)}, ${(nt / d2).toFixed(3)})` +
+    (tags.length ? ` · ${tags.join(' / ')}` : '') + (pin ? ' · pinned' : '');
+  $('detailMse').textContent = fmt(stats.value);
+  $('detailQ').textContent = `10–90%: ${fmt(stats.q10)} – ${fmt(stats.q90)}`;
+  $('detailBias').textContent = fmt(stats.bias);
+  $('detailVar').textContent = fmt(stats.testVar);
+  $('detailCond').textContent = fmt(stats.condition);
+  $('detailRank').textContent = `Median SVD rank: ${fmt(stats.rank)}`;
+}
+
+function refreshInspector() {
+  const selected = pin || shown;
+  if (selected && getCell(selected.no, selected.nt)) { showCell(selected.no, selected.nt); return; }
+  const first = results.keys().next();
+  if (!first.done) { const [no, nt] = first.value.split(':').map(Number); showCell(no, nt); }
+}
+
+// Built-in canvas renderer used for discrete bars and as the WebGL fallback.
+// ---------------- Canvas 3D renderer ----------------
+// Independent of Plotly; also provides the WebGL-free fallback.
+const Canvas3D = (() => {
+const fallbackCanvas = $('fallback3d');
+const fallbackState = {
+  az: 0.72,
+  el: 0.60,
+  zoom: 1,
+  scene: null,
+  active: false,
+  drag: false,
+  moved: false,
+  pointerId: null,
+  startX: 0,
+  startY: 0,
+  lastX: 0,
+  lastY: 0,
+};
+
+const webglOK = (() => {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl', { failIfMajorPerformanceCaveat: false }) ||
+      canvas.getContext('experimental-webgl');
+    const available = Boolean(gl && gl.getParameter(gl.VERSION));
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    return available;
+  } catch {
+    return false;
+  }
+})();
+
+const softwarePalette = colorScale.map(([position, hex]) => ({
+  position,
+  rgb: [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16)),
+}));
+
+function paletteColor(value) {
+  const t = clamp(value, 0, 1);
+  let index = 0;
+  while (index < softwarePalette.length - 2 && softwarePalette[index + 1].position < t) {
+    index++;
+  }
+  const a = softwarePalette[index];
+  const b = softwarePalette[index + 1];
+  const fraction = (t - a.position) / (b.position - a.position || 1);
+  const channels = a.rgb.map((channel, i) => Math.round(channel + (b.rgb[i] - channel) * fraction));
+  return `rgb(${channels.join(',')})`;
+}
+
+function shadeRGB(color, multiplier) {
+  const channels = color.match(/\d+/g).map(Number);
+  return `rgb(${channels.map(channel => Math.round(clamp(channel * multiplier, 0, 255))).join(',')})`;
+}
+
+function pointInQuad(x, y, vertices) {
+  let inside = false;
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+    const a = vertices[i];
+    const b = vertices[j];
+    if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// Both fitting and drawing use this exact world-to-camera transformation.
+function softwareWorldPoint(x, y, z, scene) {
+  const [xMin, xMax] = scene.xRange;
+  const [yMin, yMax] = scene.yRange;
+  const wx = 2 * ((x - xMin) / (xMax - xMin) - 0.5);
+  const wy = 2 * ((y - yMin) / (yMax - yMin) - 0.5);
+  const wz = 1.65 * clamp((z - scene.floor) / (scene.roof - scene.floor), 0, 1);
+  const { ca, sa, ce, se } = scene.camera;
+  const depth = sa * wx + ca * wy;
+  return {
+    x: ca * wx - sa * wy,
+    y: depth * se - wz * ce,
+    depth: depth * ce + wz * se,
+  };
+}
+
+function canvasPoint(x, y, z, width, height, unit, scene) {
+  const point = softwareWorldPoint(x, y, z, scene);
+  return {
+    x: scene.cx + unit * point.x,
+    y: scene.cy + unit * point.y,
+    depth: point.depth,
+  };
+}
+
+function fitSoftware3D(scene, width, height) {
+  scene.camera = {
+    ca: Math.cos(fallbackState.az), sa: Math.sin(fallbackState.az),
+    ce: Math.cos(fallbackState.el), se: Math.sin(fallbackState.el),
+  };
+  // Ground-axis labels belong on the two camera-facing edges, outside the data.
+  // Keep the height axis at the leftmost corner so its labels clear the bars.
+  const corners = scene.xRange.flatMap(x => scene.yRange.map(y => ({
+    x, y, camera: softwareWorldPoint(x, y, scene.floor, scene),
+  })));
+  corners.sort((a, b) => Math.abs(a.camera.x - b.camera.x) > 1e-10
+    ? a.camera.x - b.camera.x : b.camera.depth - a.camera.depth);
+  scene.axes = {
+    xY: scene.camera.ca >= 0 ? scene.yRange[1] : scene.yRange[0],
+    yX: scene.camera.sa >= 0 ? scene.xRange[1] : scene.xRange[0],
+    zX: corners[0].x,
+    zY: corners[0].y,
+  };
+  let xMin = Infinity;
+  let xMax = -Infinity;
+  let yMin = Infinity;
+  let yMax = -Infinity;
+  const include = (x, y, z) => {
+    if (!Number.isFinite(z)) return;
+    const point = softwareWorldPoint(x, y, z, scene);
+    xMin = Math.min(xMin, point.x);
+    xMax = Math.max(xMax, point.x);
+    yMin = Math.min(yMin, point.y);
+    yMax = Math.max(yMax, point.y);
+  };
+
+  for (const x of scene.xRange) {
+    for (const y of scene.yRange) include(x, y, scene.floor);
+  }
+  include(scene.axes.zX, scene.axes.zY, scene.roof);
+  if (scene.mode === 'bars') {
+    for (const bar of scene.bars) {
+      for (const x of [bar.x0, bar.x1]) {
+        for (const y of [bar.y0, bar.y1]) include(x, y, bar.z);
+      }
+    }
+  } else {
+    for (let iy = 0; iy < scene.yy.length; iy++) {
+      for (let ix = 0; ix < scene.xx.length; ix++) {
+        include(scene.xx[ix], scene.yy[iy], scene.matrix[iy][ix]);
+      }
+    }
+    for (const point of scene.points) include(point.x, point.y, point.z);
+  }
+
+  const left = width < 560 ? 48 : 64;
+  const right = Math.max(left + 1, width - (width < 560 ? 49 : 70));
+  const top = 49;
+  const bottom = Math.max(top + 1, height - 65);
+  const unit = Math.max(1, Math.min(
+    (right - left) / Math.max(1e-8, xMax - xMin),
+    (bottom - top) / Math.max(1e-8, yMax - yMin),
+  ) * 0.97) * fallbackState.zoom;
+  scene.cx = (left + right) / 2 - unit * (xMin + xMax) / 2;
+  scene.cy = (top + bottom) / 2 - unit * (yMin + yMax) / 2;
+  scene.unit = unit;
+  return unit;
+}
+
+function softwareAxisTicks(range) {
+  const [lower, upper] = range;
+  const rawStep = (upper - lower) / 3;
+  const order = 10 ** Math.floor(Math.log10(rawStep));
+  const fraction = rawStep / order;
+  const step = (fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10) * order;
+  const tolerance = (upper - lower) * 1e-9;
+  const ticks = [lower, upper];
+  for (let value = Math.ceil(lower / step) * step; value <= upper + tolerance; value += step) {
+    if (value > lower + tolerance && value < upper - tolerance) ticks.push(value);
+  }
+  if (1 > lower + tolerance && 1 < upper - tolerance) ticks.push(1);
+  return ticks.sort((a, b) => a - b).filter((value, index, values) =>
+    index === 0 || Math.abs(value - values[index - 1]) > tolerance);
+}
+
+function softwareDash(value) {
+  if (Array.isArray(value)) return value;
+  return value === 'dot' ? [3, 6] : value === 'dashdot' ? [8, 4, 2, 4] : value === 'solid' ? [] : [8, 5];
+}
+
+let pendingCanvasFrame = 0;
+function scheduleSoftware3D() {
+  if (pendingCanvasFrame) return;
+  pendingCanvasFrame = requestAnimationFrame(() => {
+    pendingCanvasFrame = 0;
+    renderSoftware3D();
+  });
+}
+
+function renderSoftware3D() {
+  const state = fallbackState;
+  if (!state.active || !state.scene) return;
+  const scene = state.scene;
+  const box = plotEl.getBoundingClientRect();
+  const width = Math.max(240, box.width);
+  const height = Math.max(300, box.height);
+  const dpr = clamp(window.devicePixelRatio || 1, 1, 2);
+  // Resizing a canvas reallocates its backing store; do it only on size changes.
+  const pixelWidth = Math.round(width * dpr), pixelHeight = Math.round(height * dpr);
+  if (fallbackCanvas.width !== pixelWidth) fallbackCanvas.width = pixelWidth;
+  if (fallbackCanvas.height !== pixelHeight) fallbackCanvas.height = pixelHeight;
+  if (fallbackCanvas.style.width !== `${width}px`) fallbackCanvas.style.width = `${width}px`;
+  if (fallbackCanvas.style.height !== `${height}px`) fallbackCanvas.style.height = `${height}px`;
+  const ctx = fallbackCanvas.getContext('2d');
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#10192a';
+  ctx.fillRect(0, 0, width, height);
+  const unit = fitSoftware3D(scene, width, height);
+  const project = (x, y, z) => canvasPoint(x, y, z, width, height, unit, scene);
+  const colorFor = z => paletteColor((z - scene.cmin) / (scene.cmax - scene.cmin || 1));
+  const faces = [];
+
+  if (scene.mode === 'bars') {
+    for (const bar of scene.bars) {
+      const vertices = [
+        project(bar.x0, bar.y0, scene.floor), project(bar.x1, bar.y0, scene.floor),
+        project(bar.x1, bar.y1, scene.floor), project(bar.x0, bar.y1, scene.floor),
+        project(bar.x0, bar.y0, bar.z), project(bar.x1, bar.y0, bar.z),
+        project(bar.x1, bar.y1, bar.z), project(bar.x0, bar.y1, bar.z),
+      ];
+      // Only camera-facing sides can be visible. Top faces always face upward.
+      const visibleFaces = [
+        scene.camera.ca >= 0 ? [[2, 3, 7, 6], 0.70] : [[0, 1, 5, 4], 0.76],
+        scene.camera.sa >= 0 ? [[1, 2, 6, 5], 0.57] : [[3, 0, 4, 7], 0.87],
+        [[4, 5, 6, 7], 1.12],
+      ];
+      const baseColor = colorFor(bar.z);
+      for (const [indices, shade] of visibleFaces) {
+        const verticesForFace = indices.map(index => vertices[index]);
+        faces.push({
+          v: verticesForFace,
+          depth: verticesForFace.reduce((sum, point) => sum + point.depth, 0) / verticesForFace.length,
+          color: shadeRGB(baseColor, shade),
+          bar,
+          top: indices[0] === 4,
+        });
+      }
+    }
+  } else {
+    // Every grid cell is used; coarse previews must not hide sampled peaks.
+    for (let iy = 0; iy < scene.yy.length - 1; iy++) {
+      for (let ix = 0; ix < scene.xx.length - 1; ix++) {
+        const zs = [scene.matrix[iy][ix], scene.matrix[iy][ix + 1],
+          scene.matrix[iy + 1][ix + 1], scene.matrix[iy + 1][ix]];
+        if (!zs.every(Number.isFinite)) continue;
+        const vertices = [
+          project(scene.xx[ix], scene.yy[iy], zs[0]),
+          project(scene.xx[ix + 1], scene.yy[iy], zs[1]),
+          project(scene.xx[ix + 1], scene.yy[iy + 1], zs[2]),
+          project(scene.xx[ix], scene.yy[iy + 1], zs[3]),
+        ];
+        faces.push({
+          v: vertices,
+          depth: vertices.reduce((sum, point) => sum + point.depth, 0) / vertices.length,
+          color: colorFor(zs.reduce((sum, z) => sum + z, 0) / zs.length),
+        });
+      }
+    }
+  }
+
+  faces.sort((a, b) => a.depth - b.depth);
+  const drawPolygon = vertices => {
+    ctx.beginPath();
+    ctx.moveTo(vertices[0].x, vertices[0].y);
+    for (let index = 1; index < vertices.length; index++) ctx.lineTo(vertices[index].x, vertices[index].y);
+    ctx.closePath();
+  };
+  for (const face of faces) {
+    drawPolygon(face.v);
+    ctx.fillStyle = face.color;
+    ctx.fill();
+    // A same-color edge closes antialiasing seams between adjoining footprints.
+    ctx.strokeStyle = scene.mode === 'bars' ? face.color : '#17263c70';
+    ctx.lineWidth = scene.mode === 'bars' ? 0.6 : 0.65;
+    ctx.stroke();
+    if (face.top && face.bar?.kind === 'exact') {
+      ctx.strokeStyle = '#e6f3fc99';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+  }
+  scene.hitFaces = scene.mode === 'bars' ? faces : [];
+
+  const line = (coordinates, color, dash = [], lineWidth = 1.4) => {
+    ctx.beginPath();
+    coordinates.forEach(([x, y, z], index) => {
+      const point = project(x, y, z);
+      if (index === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.setLineDash(dash);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  };
+  const [xMin, xMax] = scene.xRange;
+  const [yMin, yMax] = scene.yRange;
+  const { xY, yX, zX, zY } = scene.axes;
+  const xStart = project(xMin, xY, scene.floor);
+  const xEnd = project(xMax, xY, scene.floor);
+  const yStart = project(yX, yMin, scene.floor);
+  const yEnd = project(yX, yMax, scene.floor);
+  const zOrigin = project(zX, zY, scene.floor);
+  const zTop = project(zX, zY, scene.roof);
+  line([[xMin, xY, scene.floor], [xMax, xY, scene.floor]], '#9db2c7');
+  line([[yX, yMin, scene.floor], [yX, yMax, scene.floor]], '#9db2c7');
+  line([[zX, zY, scene.floor], [zX, zY, scene.roof]], '#9db2c7');
+  for (const guide of scene.guides) {
+    line([[guide.x[0], guide.y[0], scene.floor], [guide.x[1], guide.y[1], scene.floor]],
+      guide.color, softwareDash(guide.dash), guide.dash === 'dot' ? 1.6 : 2.2);
+  }
+
+  if (scene.mode !== 'bars') {
+    const drawPoint = (point, radius, opacity = 1) => {
+      const position = project(point.x, point.y, point.z);
+      ctx.beginPath();
+      ctx.arc(position.x, position.y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = colorFor(point.z);
+      ctx.globalAlpha = opacity;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      if (point.kind === 'exact') {
+        ctx.strokeStyle = '#f7faff88';
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
+    };
+    // A one-row/one-column surface is a curve, and a singleton is a point.
+    // During an early partial render, show isolated samples before faces exist.
+    if (scene.xx.length < 2 || scene.yy.length < 2 || faces.length === 0) {
+      let previous = null;
+      for (let iy = 0; iy < scene.yy.length; iy++) {
+        if (scene.yy.length > 1 && scene.xx.length > 1) previous = null;
+        for (let ix = 0; ix < scene.xx.length; ix++) {
+          const z = scene.matrix[iy][ix];
+          if (!Number.isFinite(z)) { previous = null; continue; }
+          const point = { x: scene.xx[ix], y: scene.yy[iy], z };
+          if (previous && (scene.xx.length === 1 || scene.yy.length === 1)) {
+            line([[previous.x, previous.y, previous.z], [point.x, point.y, point.z]], colorFor(z), [], 2);
+          }
+          drawPoint(point, 3);
+          previous = point;
+        }
+      }
+    }
+    for (const point of scene.points) {
+      drawPoint(point, point.kind === 'exact' ? 3.2 : 2.1, point.kind === 'exact' ? 0.96 : 0.58);
+    }
+  }
+
+  ctx.font = '10px ui-sans-serif, system-ui';
+  ctx.fillStyle = '#8fa5bf';
+  const groundCenter = project((xMin + xMax) / 2, (yMin + yMax) / 2, scene.floor);
+  const groundTickLabels = [];
+  const annotateAxis = (range, start, end, axis, title) => {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.max(1, Math.hypot(dx, dy));
+    let normalX = -dy / length;
+    let normalY = dx / length;
+    if ((groundCenter.x - start.x) * normalX + (groundCenter.y - start.y) * normalY > 0) {
+      normalX *= -1;
+      normalY *= -1;
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const placed = [];
+    // Reserve endpoint labels first, then add uncrowded intermediate ticks.
+    const ticks = [range[0], range[1], ...softwareAxisTicks(range)
+      .filter(value => value !== range[0] && value !== range[1])];
+    for (const value of ticks) {
+      const point = axis === 'x' ? project(value, xY, scene.floor) : project(yX, value, scene.floor);
+      const text = fmt(value);
+      // Account for text width when an axis rotates close to vertical.
+      const labelDistance = 9 + ctx.measureText(text).width * Math.abs(normalX) / 2 + 6 * Math.abs(normalY);
+      const labelPoint = { x: point.x + normalX * labelDistance, y: point.y + normalY * labelDistance };
+      // The front corner is shared by both axes; print an identical count once.
+      if (groundTickLabels.some(other => other.text === text &&
+          Math.hypot(other.x - point.x, other.y - point.y) < 1e-6)) continue;
+      // Endpoints identify the selected range; avoid crowded intermediate text.
+      const endpoint = value === range[0] || value === range[1];
+      if (!endpoint && placed.some(other => Math.hypot(other.x - labelPoint.x, other.y - labelPoint.y) < 30)) continue;
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y);
+      ctx.lineTo(point.x + normalX * 4, point.y + normalY * 4);
+      ctx.strokeStyle = '#8fa5bf';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      ctx.fillText(text, labelPoint.x, labelPoint.y);
+      placed.push(labelPoint);
+      groundTickLabels.push({ x: point.x, y: point.y, text });
+    }
+    ctx.font = '11px ui-sans-serif, system-ui';
+    ctx.fillStyle = '#b6c8dc';
+    ctx.fillText(title, clamp((start.x + end.x) / 2 + normalX * 35, 40, width - 65),
+      clamp((start.y + end.y) / 2 + normalY * 35, 34, height - 15));
+    ctx.font = '10px ui-sans-serif, system-ui';
+    ctx.fillStyle = '#8fa5bf';
+  };
+  annotateAxis(scene.xRange, xStart, xEnd, 'x', 'n_out / d²');
+  annotateAxis(scene.yRange, yStart, yEnd, 'y', 'n_tr / d²');
+  ctx.textAlign = 'right';
+  ctx.fillText(fmt(scene.floor), zOrigin.x - 8, zOrigin.y - 7);
+  ctx.fillText(fmt(scene.roof), zTop.x - 8, zTop.y);
+  ctx.font = '11px ui-sans-serif, system-ui';
+  ctx.fillStyle = '#b6c8dc';
+  ctx.textAlign = 'center';
+  ctx.fillText(scene.scale === 'log' ? 'log₁₀ MSE' : 'MSE', clamp(zTop.x, 40, width - 65),
+    clamp(zTop.y - 17, 35, height - 15));
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#8da4bc';
+  const instruction = width < 560 ? 'drag to rotate · scroll to zoom' : 'drag: rotate · scroll: zoom';
+  const title = scene.mode === 'bars' ? `${scene.bars.length} discrete bars` : 'Joined 3D surface';
+  ctx.fillText(`${title} · ${instruction}`, 12, 23);
+  if (!scene.hasData) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#b6c8dc';
+    ctx.fillText('No computed samples yet', width / 2, height / 2);
+    ctx.textAlign = 'left';
+  }
+
+  const barX = width - 37;
+  const barY = height * 0.26;
+  const barHeight = height * 0.44;
+  const barWidth = 13;
+  for (let pixel = 0; pixel < barHeight; pixel++) {
+    ctx.fillStyle = paletteColor(1 - pixel / barHeight);
+    ctx.fillRect(barX, barY + pixel, barWidth, 2);
+  }
+  ctx.strokeStyle = '#4c5e75';
+  ctx.lineWidth = 0.6;
+  ctx.strokeRect(barX, barY, barWidth, barHeight);
+  ctx.fillStyle = '#a3b7cd';
+  ctx.font = '10px ui-sans-serif, system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText(fmt(scene.cmax), barX + barWidth / 2, barY - 7);
+  ctx.fillText(fmt(scene.cmin), barX + barWidth / 2, barY + barHeight + 14);
+
+  const choice = pin || shown;
+  if (!choice) return;
+  if (scene.mode === 'bars') {
+    const bar = scene.barMap.get(`${choice.no}:${choice.nt}`);
+    if (!bar) return;
+    drawPolygon([project(bar.x0, bar.y0, bar.z), project(bar.x1, bar.y0, bar.z),
+      project(bar.x1, bar.y1, bar.z), project(bar.x0, bar.y1, bar.z)]);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.3;
+    ctx.stroke();
+  } else {
+    const cell = getCell(choice.no, choice.nt);
+    const summary = cell && summarize(cell);
+    const x = choice.no / scene.d2;
+    const y = choice.nt / scene.d2;
+    if (!summary || x < xMin || x > xMax || y < yMin || y > yMax) return;
+    const z = valueForPlot(summary.value);
+    if (!Number.isFinite(z)) return;
+    const point = project(x, y, z);
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffffff99';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+function drawSoftware3D(xx, yy, matrix, sort, cmin, cmax, points, bars = [], axes = readPlotAxes()) {
+  const mode = display.threeStyle;
+  const finiteValues = sort.filter(Number.isFinite);
+  let minimum = display.scale === 'log' ? -8 : 0;
+  let maximum = display.scale === 'log' ? 0 : 1;
+  if (finiteValues.length) {
+    minimum = finiteValues[0];
+    maximum = finiteValues[finiteValues.length - 1];
+  }
+  const floor = axes.mseRange ? axes.mseRange[0] : mode === 'bars'
+    ? (display.scale === 'log' ? minimum - Math.max(0.08, 0.02 * (maximum - minimum)) : 0)
+    : minimum;
+  const roof = axes.mseRange ? axes.mseRange[1] : Math.max(maximum, floor + (display.scale === 'log' ? 0.25 : Math.max(0.01, Math.abs(maximum) * 0.02)));
+  const [xmin, xmax] = axes.xRange, [ymin, ymax] = axes.yRange;
+  const visibleX = xx.map((x, index) => [x, index]).filter(([x]) => x >= xmin && x <= xmax);
+  const visibleY = yy.map((y, index) => [y, index]).filter(([y]) => y >= ymin && y <= ymax);
+  const visibleMatrix = visibleY.map(([, iy]) => visibleX.map(([, ix]) => matrix[iy][ix]));
+  const finiteBars = bars.filter(bar => Number.isFinite(bar.z) &&
+    bar.x1 > xmin && bar.x0 < xmax && bar.y1 > ymin && bar.y0 < ymax)
+    .map(bar => ({ ...bar, x0: Math.max(xmin, bar.x0), x1: Math.min(xmax, bar.x1),
+      y0: Math.max(ymin, bar.y0), y1: Math.min(ymax, bar.y1) }));
+  const finitePoints = points.filter(point => Number.isFinite(point.z) &&
+    point.x >= xmin && point.x <= xmax && point.y >= ymin && point.y <= ymax);
+  fallbackState.scene = {
+    mode, xx: visibleX.map(([x]) => x), yy: visibleY.map(([y]) => y), matrix: visibleMatrix,
+    cmin, cmax, points: finitePoints, bars: finiteBars, floor, roof,
+    xRange: [...axes.xRange], yRange: [...axes.yRange],
+    nOuts: visibleX.map(([, index]) => settings.nOuts[index]),
+    nTrs: visibleY.map(([, index]) => settings.nTrs[index]), d2: settings.d ** 2,
+    guides: getGuideLines(settings, axes.xRange, axes.yRange),
+    scale: display.scale,
+    hitFaces: [],
+    barMap: new Map(finiteBars.map(bar => [`${bar.no}:${bar.nt}`, bar])),
+    hasData: mode === 'bars' ? finiteBars.length > 0 : finitePoints.length > 0 || visibleMatrix.some(row => row.some(Number.isFinite)),
+  };
+  fallbackState.active = true;
+  plotEl.style.visibility = 'hidden';
+  fallbackCanvas.style.display = 'block';
+  renderSoftware3D();
+  initialPlot = true;
+  $('emptyOverlay').style.display = 'none';
+}
+
+function resetSoftwarePointer() {
+  fallbackState.drag = false;
+  fallbackState.pointerId = null;
+  fallbackCanvas.classList.remove('dragging');
+}
+
+function stopSoftware3D() {
+  if (pendingCanvasFrame) {
+    cancelAnimationFrame(pendingCanvasFrame);
+    pendingCanvasFrame = 0;
+  }
+  resetSoftwarePointer();
+  fallbackState.active = false;
+  fallbackState.scene = null; // Release bar faces, geometry and sample arrays.
+  fallbackCanvas.style.display = 'none';
+  plotEl.style.visibility = 'visible';
+}
+
+function softwareNearest(event) {
+  const state = fallbackState;
+  const scene = state.scene;
+  if (!state.active || !scene?.camera) return null;
+  const rect = fallbackCanvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  if (scene.mode === 'bars') {
+    // Match the last visible polygon in the painter's drawing order.
+    for (let index = scene.hitFaces.length - 1; index >= 0; index--) {
+      const face = scene.hitFaces[index];
+      if (pointInQuad(x, y, face.v)) return { no: face.bar.no, nt: face.bar.nt };
+    }
+    return null;
+  }
+  let nearest = null;
+  let bestDistance = 1800;
+  const consider = (px, py, pz, no, nt) => {
+    if (!Number.isFinite(pz)) return;
+    const point = canvasPoint(px, py, pz, rect.width, rect.height, scene.unit, scene);
+    const distance = (point.x - x) ** 2 + (point.y - y) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      nearest = { no, nt };
+    }
+  };
+  for (let iy = 0; iy < scene.yy.length; iy++) {
+    for (let ix = 0; ix < scene.xx.length; ix++) {
+      consider(scene.xx[ix], scene.yy[iy], scene.matrix[iy][ix], scene.nOuts[ix], scene.nTrs[iy]);
+    }
+  }
+  for (const point of scene.points) consider(point.x, point.y, point.z, point.no, point.nt);
+  return nearest;
+}
+
+fallbackCanvas.addEventListener('pointerdown', event => {
+  if (!fallbackState.active || fallbackState.drag || event.button !== 0) return;
+  fallbackState.drag = true;
+  fallbackState.moved = false;
+  fallbackState.pointerId = event.pointerId;
+  fallbackState.startX = fallbackState.lastX = event.clientX;
+  fallbackState.startY = fallbackState.lastY = event.clientY;
+  fallbackCanvas.classList.add('dragging');
+  fallbackCanvas.setPointerCapture(event.pointerId);
+});
+
+fallbackCanvas.addEventListener('pointermove', event => {
+  const state = fallbackState;
+  if (!state.active) return;
+  if (state.drag) {
+    if (event.pointerId !== state.pointerId) return;
+    const dx = event.clientX - state.lastX;
+    const dy = event.clientY - state.lastY;
+    if (Math.hypot(event.clientX - state.startX, event.clientY - state.startY) > 4) state.moved = true;
+    state.az += dx * 0.008;
+    state.el = clamp(state.el - dy * 0.007, 0.14, 1.43);
+    state.lastX = event.clientX;
+    state.lastY = event.clientY;
+    scheduleSoftware3D();
+  } else if (!pin) {
+    const cell = softwareNearest(event);
+    if (cell && (shown?.no !== cell.no || shown?.nt !== cell.nt)) {
+      showCell(cell.no, cell.nt);
+      scheduleSoftware3D();
+    }
+  }
+});
+
+fallbackCanvas.addEventListener('pointerup', event => {
+  if (!fallbackState.drag || event.pointerId !== fallbackState.pointerId) return;
+  const wasClick = !fallbackState.moved;
+  resetSoftwarePointer();
+  if (fallbackCanvas.hasPointerCapture(event.pointerId)) fallbackCanvas.releasePointerCapture(event.pointerId);
+  if (wasClick) {
+    const cell = softwareNearest(event);
+    if (cell) {
+      pin = cell;
+      $('unpin').style.display = 'block';
+      showCell(cell.no, cell.nt);
+      renderSoftware3D();
+    }
+  }
+});
+
+for (const eventName of ['pointercancel', 'lostpointercapture']) {
+  fallbackCanvas.addEventListener(eventName, event => {
+    if (event.pointerId === fallbackState.pointerId) resetSoftwarePointer();
+  });
+}
+
+fallbackCanvas.addEventListener('wheel', event => {
+  if (!fallbackState.active) return;
+  event.preventDefault();
+  fallbackState.zoom = clamp(fallbackState.zoom * Math.exp(-event.deltaY * 0.001), 0.6, 1.6);
+  scheduleSoftware3D();
+}, { passive: false });
+
+  return { fallbackCanvas, fallbackState, webglOK, renderSoftware3D, drawSoftware3D, stopSoftware3D };
+})();
+const { fallbackCanvas, fallbackState, webglOK, renderSoftware3D, drawSoftware3D, stopSoftware3D } = Canvas3D;
+
+// Plot construction is separate from task planning and the simulation worker.
+// ---------------- Plotly renderer & draw scheduler ----------------
+const PlotView = (() => {
+const plotFont = { family: 'Inter, system-ui, sans-serif', color: '#d5e2f2', size: 11 };
+const plotBackground = '#10192a';
+const axisStyle = {
+  color: '#a9bad0', gridcolor: '#26344b', linecolor: '#34445c',
+  zerolinecolor: '#34445c', tickfont: { size: 10 }, showspikes: false,
+};
+const plotConfig = {
+  responsive: true, displaylogo: false, displayModeBar: true, scrollZoom: true,
+  modeBarButtonsToRemove: ['lasso2d', 'select2d', 'toggleSpikelines', 'toImage'],
+};
+let renderPromise = Promise.resolve();
+let drawTimer = null;
+let drawing = false;
+let drawAfter = false;
+let eventsBound = false;
+let plotlyKind = null;
+let lastProgressDraw = 0;
+
+function purgePlotly() {
+  if (plotEl._fullLayout && window.Plotly?.purge) Plotly.purge(plotEl);
+  // Plotly.purge removes its emitter and listeners. Bind once after rebuilding.
+  eventsBound = false;
+  plotlyKind = null;
+}
+
+function hoverTemplate() {
+  return '<b>n_out = %{customdata[0]} · n_tr = %{customdata[1]}</b><br>' +
+    display.stat + ' MSE = %{customdata[2]:.3e}<br>' +
+    '10–90% = %{customdata[3]:.2e} … %{customdata[4]:.2e}<extra></extra>';
+}
+
+function pointData(no, nt, kind = 'grid') {
+  const stats = summarize(getCell(no, nt));
+  if (!stats) return null;
+  const d2 = settings.d ** 2;
+  return {
+    no, nt, x: no / d2, y: nt / d2, z: valueForPlot(stats.value), kind,
+    customdata: [no, nt, stats.value, stats.q10, stats.q90],
+  };
+}
+
+function collectMapData(axes) {
+  const d2 = settings.d ** 2;
+  const xx = settings.nOuts.map((count) => count / d2);
+  const yy = settings.nTrs.map((count) => count / d2);
+  const matrix = [], custom = [], gridPoints = [], values = [];
+  for (const nt of settings.nTrs) {
+    const row = [], metadata = [];
+    for (const no of settings.nOuts) {
+      const point = pointData(no, nt);
+      row.push(point ? point.z : null);
+      metadata.push(point ? point.customdata : [no, nt, null, null, null]);
+      if (point) { values.push(point.z); gridPoints.push(point); }
+    }
+    matrix.push(row); custom.push(metadata);
+  }
+  function scanPoints(source, kind) {
+    return source.map(({ no, nt }) => pointData(no, nt, kind)).filter((point) => {
+      if (point) values.push(point.z);
+      return point !== null;
+    });
+  }
+  // Retain the original grid-plus-scan weighting of the robust color percentiles.
+  const exact = scanPoints(settings.scanExact, 'exact');
+  const near = scanPoints(settings.scanNear, 'near');
+  const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
+  let cmin = sorted.length ? quantileSorted(sorted, display.colorRange === 'full' ? 0 : 0.02) : display.scale === 'log' ? -8 : 0;
+  let cmax = sorted.length ? quantileSorted(sorted, display.colorRange === 'full' ? 1 : 0.98) : display.scale === 'log' ? 0 : 1;
+  if (cmin === cmax) {
+    const padding = Math.max(Math.abs(cmin) * 0.03, 0.005);
+    cmin -= padding; cmax += padding;
+  }
+  if (axes.mseRange) [cmin, cmax] = axes.mseRange;
+  return { xx, yy, matrix, custom, gridPoints, exact, near, sorted, cmin, cmax };
+}
+
+function colorBar() {
+  return {
+    title: { text: display.scale === 'log' ? 'log₁₀ MSE' : 'MSE', side: 'right', font: { size: 11, color: '#aabbd2' } },
+    thickness: 13, len: 0.79, outlinewidth: 0,
+    tickfont: { size: 10, color: '#9eacc2' }, x: 1.015, xpad: 1,
+  };
+}
+
+function scatterOverlay(points, kind, data, is3D = false, showScale = false) {
+  const exact = kind === 'exact';
+  const trace = {
+    type: is3D ? 'scatter3d' : 'scatter', mode: 'markers',
+    x: points.map((point) => point.x), y: points.map((point) => point.y),
+    customdata: points.map((point) => point.customdata),
+    marker: {
+      size: is3D ? (exact ? 3.4 : 2.2) : (exact ? 6.5 : 4),
+      opacity: exact ? 0.97 : 0.62,
+      color: points.map((point) => point.z), colorscale: colorScale,
+      cmin: data.cmin, cmax: data.cmax, showscale: showScale,
+      line: { color: exact ? '#f0f6ff' : '#111b2c', width: exact ? 0.65 : 0 },
+      ...(showScale ? { colorbar: colorBar() } : {}),
+    },
+    hovertemplate: hoverTemplate(), showlegend: false,
+    name: exact ? 'Exact critical scan' : kind === 'near' ? '±1 neighbor' : 'Sampled point',
+  };
+  if (is3D) trace.z = points.map((point) => point.z);
+  return trace;
+}
+
+function baseLayout() {
+  return {
+    paper_bgcolor: plotBackground, plot_bgcolor: plotBackground, font: plotFont,
+    hovermode: 'closest', showlegend: false,
+    uirevision: `${runId}:${settings.plotMode}:${display.view}:${display.scale}:${axisRevision}`,
+  };
+}
+
+function buildHeatmap(data, axes) {
+  const d2 = settings.d ** 2;
+  const traces = [{
+    type: 'heatmap',
+    x: cellEdges(data.xx, sampledRange(settings.outBounds, d2)),
+    y: cellEdges(data.yy, sampledRange(settings.trBounds, d2)),
+    z: data.matrix, customdata: data.custom, colorscale: colorScale,
+    zmin: data.cmin, zmax: data.cmax, colorbar: colorBar(),
+    hoverongaps: false, hovertemplate: hoverTemplate(), connectgaps: false,
+    xgap: 0.55, ygap: 0.55,
+  }];
+  if (data.near.length) traces.push(scatterOverlay(data.near, 'near', data));
+  if (data.exact.length) traces.push(scatterOverlay(data.exact, 'exact', data));
+  const shapes = getGuideLines(settings, axes.xRange, axes.yRange).map((guide) => ({
+    type: 'line', xref: 'x', yref: 'y',
+    x0: guide.x[0], x1: guide.x[1], y0: guide.y[0], y1: guide.y[1],
+    line: { color: guide.color, width: guide.dash === 'dot' ? 1.5 : 2, dash: guide.dash },
+  }));
+  const sameSpan = Math.abs((axes.xRange[1] - axes.xRange[0]) - (axes.yRange[1] - axes.yRange[0])) < 1e-10;
+  const layout = {
+    ...baseLayout(), margin: { l: 61, r: 70, t: 25, b: 57 }, shapes,
+    xaxis: { ...axisStyle, title: { text: 'n_out / d²', standoff: 8 }, range: [...axes.xRange], constrain: 'domain', fixedrange: axes.countFixed },
+    yaxis: {
+      ...axisStyle, title: { text: 'n_tr / d²', standoff: 7 }, range: [...axes.yRange],
+      ...(sameSpan ? { scaleanchor: 'x', scaleratio: 1 } : {}), constrain: 'domain', fixedrange: axes.countFixed,
+    },
+  };
+  return { traces, layout };
+}
+
+function buildSurface(data, axes) {
+  const hasSurface = data.xx.length > 1 && data.yy.length > 1;
+  const surface = {
+    type: 'surface', x: data.xx, y: data.yy, z: data.matrix, customdata: data.custom,
+    hovertemplate: hoverTemplate(), colorscale: colorScale, cmin: data.cmin, cmax: data.cmax,
+    colorbar: colorBar(), connectgaps: false, showscale: true,
+    contours: { z: { show: true, usecolormap: false, color: '#6a8ca8', width: 1, highlight: false, project: { z: false } } },
+    lighting: { ambient: 0.75, diffuse: 0.8, specular: 0.1, roughness: 0.8, fresnel: 0.05 },
+  };
+  const traces = [hasSurface ? surface : scatterOverlay(data.gridPoints, 'grid', data, true, true)];
+  if (!hasSurface) { traces[0].mode = 'lines+markers'; traces[0].line = { color: '#64d9dc', width: 4 }; }
+  if (data.near.length) traces.push(scatterOverlay(data.near, 'near', data, true));
+  if (data.exact.length) traces.push(scatterOverlay(data.exact, 'exact', data, true));
+  const min = data.sorted.length ? data.sorted[0] : 0;
+  const max = data.sorted.length ? data.sorted[data.sorted.length - 1] : 1;
+  const floor = axes.mseRange
+    ? axes.mseRange[0] + 0.005 * (axes.mseRange[1] - axes.mseRange[0])
+    : min + 0.005 * Math.max(1e-12, max - min);
+  for (const guide of getGuideLines(settings, axes.xRange, axes.yRange)) {
+    traces.push({
+      type: 'scatter3d', mode: 'lines', x: guide.x, y: guide.y, z: [floor, floor],
+      line: { color: guide.color, width: 5, dash: guide.dash }, hoverinfo: 'skip', showlegend: false,
+    });
+  }
+  const axis = {
+    showbackground: true, backgroundcolor: '#142033', gridcolor: '#3a4d67',
+    showspikes: false, zerolinecolor: '#50617a', tickfont: { size: 10, color: '#bac9d9' }, color: '#d0dceb',
+  };
+  const layout = {
+    ...baseLayout(), margin: { l: 0, r: 8, t: 5, b: 0 },
+    scene: {
+      bgcolor: plotBackground, aspectmode: 'manual', aspectratio: { x: 1, y: 1, z: 0.7 },
+      camera: { eye: { x: 1.68, y: 1.65, z: 1.07 } },
+      xaxis: { ...axis, title: { text: 'n_out / d²' }, range: [...axes.xRange], nticks: 6 },
+      yaxis: { ...axis, title: { text: 'n_tr / d²' }, range: [...axes.yRange], nticks: 6 },
+      zaxis: { ...axis, title: { text: display.scale === 'log' ? 'log₁₀ MSE' : 'MSE' },
+        ...(axes.mseRange ? { range: [...axes.mseRange] } : {}), nticks: 6 },
+    },
+  };
+  return { traces, layout };
+}
+
+function buildSlices(axes) {
+  const horizontal = settings.plotMode === 'horizontal';
+  const d2 = settings.d ** 2;
+  const variableRange = horizontal ? axes.xRange : axes.yRange;
+  const sortedTasks = [...settings.tasks].sort((a, b) => a.nOut - b.nOut);
+  const traces = settings.fixedValues.map((fixed, index) => {
+    const coordinates = horizontal
+      ? sortedTasks.filter((task) => task.nTrs.includes(fixed)).map((task) => ({ no: task.nOut, nt: fixed }))
+      : (sortedTasks.find((task) => task.nOut === fixed)?.nTrs || []).map((nt) => ({ no: fixed, nt }));
+    const points = coordinates.map(({ no, nt }) => pointData(no, nt));
+    return {
+      type: 'scatter', mode: 'lines+markers',
+      name: `${horizontal ? 'n_tr' : 'n_out'} = ${fixed} (${fmt(fixed / d2)} d²)`,
+      x: coordinates.map(({ no, nt }) => (horizontal ? no : nt) / d2),
+      y: points.map((point) => point ? point.z : null),
+      customdata: points.map((point, i) => point ? point.customdata : [coordinates[i].no, coordinates[i].nt, null, null, null]),
+      line: { color: sliceColors[index % sliceColors.length], width: 2, shape: 'linear' },
+      marker: { size: 6, color: sliceColors[index % sliceColors.length], line: { width: 0.5, color: plotBackground } },
+      connectgaps: false, hovertemplate: hoverTemplate(),
+    };
+  });
+  const guides = [];
+  if (inRange(1, variableRange)) guides.push({ value: 1, color: horizontal ? '#64d9dc' : '#f2af72', dash: 'dash' });
+  for (const fixed of settings.fixedValues) {
+    const value = fixed / d2;
+    if (value !== 1 && inRange(value, variableRange)) guides.push({ value, color: '#f2edf8', dash: 'dot' });
+  }
+  const layout = {
+    ...baseLayout(), margin: { l: 70, r: 25, t: 30, b: 85 }, showlegend: true,
+    legend: { orientation: 'h', x: 0, y: -0.17, font: { size: 11, color: '#c4d3e6' } },
+    xaxis: { ...axisStyle, title: { text: `${horizontal ? 'n_out' : 'n_tr'} / d²`, standoff: 10 },
+      range: [...variableRange], fixedrange: axes.countFixed },
+    yaxis: { ...axisStyle, title: { text: `${display.scale === 'log' ? 'log₁₀ ' : ''}${display.stat} MSE`, standoff: 10 },
+      ...(axes.mseRange ? { range: [...axes.mseRange], fixedrange: true } : { autorange: true }) },
+    shapes: guides.map((guide) => ({
+      type: 'line', xref: 'x', yref: 'paper', layer: 'below',
+      x0: guide.value, x1: guide.value, y0: 0, y1: 1,
+      line: { color: guide.color, width: 1.5, dash: guide.dash },
+    })),
+  };
+  return { traces, layout };
+}
+
+function hoverPoint(point) {
+  const data = point?.customdata;
+  if (Array.isArray(data) && Number.isInteger(data[0]) && Number.isInteger(data[1])) return { no: data[0], nt: data[1] };
+  // Heatmap hover events in older Plotly paths expose grid indices instead.
+  if (point?.curveNumber === 0 && settings.plotMode === 'map') {
+    const indices = Array.isArray(point.pointNumber) ? point.pointNumber : point.pointIndex;
+    if (Array.isArray(indices) && indices.length >= 2) {
+      return { no: settings.nOuts[indices[1]], nt: settings.nTrs[indices[0]] };
+    }
+  }
+  return null;
+}
+
+function attachChartEvents() {
+  if (eventsBound) return;
+  plotEl.on('plotly_hover', (event) => {
+    if (pin) return;
+    const point = hoverPoint(event.points?.[0]);
+    if (point) showCell(point.no, point.nt);
+  });
+  plotEl.on('plotly_click', (event) => {
+    const point = hoverPoint(event.points?.[0]);
+    if (!point || !getCell(point.no, point.nt)) return;
+    pin = point; $('unpin').style.display = 'block'; showCell(point.no, point.nt);
+  });
+  eventsBound = true;
+}
+
+function requestDraw(delay = 80) {
+  clearTimeout(drawTimer);
+  drawTimer = setTimeout(() => { drawTimer = null; redraw(); }, delay);
+}
+
+function redraw() {
+  if (drawing) { drawAfter = true; return renderPromise; }
+  if (!settings) return Promise.resolve();
+  const thisRun = runId;
+  let plot, axes;
+  try { axes = readPlotAxes(); }
+  catch (error) { showInputError(error.message); return Promise.resolve(); }
+  if (settings.plotMode !== 'map') {
+    stopSoftware3D();
+    plot = buildSlices(axes);
+  } else {
+    const data = collectMapData(axes);
+    if (display.view === '3d' && (display.threeStyle === 'bars' || !webglOK)) {
+      // A hidden Plotly graph otherwise retains WebGL buffers and DOM metadata.
+      if (plotlyKind) purgePlotly();
+      const bars = [];
+      if (display.threeStyle === 'bars') {
+        const footprints = settings.barCells || (settings.barCells = buildBarCells(settings));
+        for (const [key, cell] of results) {
+          const stats = summarize(cell), footprint = footprints.get(key);
+          if (stats && footprint) bars.push({ ...footprint, z: valueForPlot(stats.value) });
+        }
+      }
+      refreshInspector();
+      drawSoftware3D(data.xx, data.yy, data.matrix, data.sorted, data.cmin, data.cmax, [...data.near, ...data.exact], bars, axes);
+      return Promise.resolve();
+    }
+    stopSoftware3D();
+    plot = display.view === '2d' ? buildHeatmap(data, axes) : buildSurface(data, axes);
+  }
+  const kind = settings.plotMode === 'map' && display.view === '3d' ? 'surface' : 'flat';
+  // Let Plotly reclaim a retired WebGL scene rather than retaining the GL cache.
+  if (plotlyKind === 'surface' && kind !== 'surface') purgePlotly();
+  plotlyKind = kind;
+  drawing = true;
+  renderPromise = Promise.resolve().then(() => Plotly.react(plotEl, plot.traces, plot.layout, plotConfig)).then(() => {
+    initialPlot = true;
+    attachChartEvents();
+    if (runId === thisRun) { $('emptyOverlay').style.display = 'none'; refreshInspector(); }
+  }).catch((error) => {
+    console.error(error);
+    if (runId === thisRun) { setStatus('Plot error', 'error'); showInputError(error.message); }
+  }).finally(() => {
+    drawing = false;
+    if (drawAfter || runId !== thisRun) { drawAfter = false; requestDraw(20); }
+  });
+  return renderPromise;
+}
+
+  function cancelPendingDraw() {
+    clearTimeout(drawTimer);
+    drawTimer = null;
+    drawAfter = false;
+  }
+  return { redraw, requestDraw, cancelPendingDraw, getRenderPromise: () => renderPromise,
+    lastProgressDraw: () => lastProgressDraw, markProgressDraw: now => { lastProgressDraw = now; } };
+})();
+const { redraw, requestDraw } = PlotView;
+
+// ---------------- Controller: form state, worker & exports ----------------
+let testModeBeforeHaar = $('testMode').value;
+let previousRangeUnits = $('rangeUnits').value;
+let suspendedRun = false;
+
+// Presets deliberately leave the random seed and display-only axis locks alone.
+// Their unspecified sampled domain uses the application's original 0–2.5 d².
+const PRESETS = Object.freeze({
+  both: { mode: 'horizontal', fixed: '2', N: 200000, M: 200, gamma: 0 },
+  interpolation: { mode: 'horizontal', fixed: '0.5', N: null, M: null, gamma: 0 },
+  labels: { mode: 'vertical', fixed: '1.5', N: 100000, M: 100000, gamma: 0.1 },
+});
+
+function setInfinity(which, active) {
+  const button = $(which === 'N' ? 'trainInf' : 'testInf');
+  const input = $(which === 'N' ? 'trainShots' : 'testShots');
+  button.classList.toggle('active', active);
+  button.setAttribute('aria-pressed', String(active));
+  input.disabled = active;
+}
+
+function selectCustomPreset() {
+  if ($('preset').value !== 'custom') $('preset').value = 'custom';
+}
+
+function applyPreset(name) {
+  const preset = PRESETS[name];
+  if (!preset) return;
+  $('dimension').value = '6';
+  $('realizations').value = '100';
+  $('allCounts').checked = true;
+  $('rangeUnits').value = previousRangeUnits = 'normalized';
+  $('outMin').value = $('trMin').value = '0';
+  $('outMax').value = $('trMax').value = '2.5';
+  $('plotMode').value = preset.mode;
+  $('sliceValues').value = preset.fixed;
+  $('criticalScans').checked = true;
+  $('trainShots').value = String(preset.N ?? 200000);
+  $('testShots').value = String(preset.M ?? 200);
+  setInfinity('N', preset.N === null);
+  setInfinity('M', preset.M === null);
+  $('labelNoiseEnabled').checked = preset.gamma > 0;
+  $('gamma').disabled = preset.gamma === 0;
+  $('gamma').value = String(preset.gamma);
+  $('pairs').value = 'haar';
+  $('shotModel').value = 'gaussian';
+  $('testMode').value = testModeBeforeHaar = 'analytic';
+  $('mix').value = $('mixExact').value = '0';
+  $('mixValue').textContent = '0';
+  $('rcond').value = '1e-10';
+  syncPairMode();
+  syncDomainControls();
+  syncChartControls();
+  showInputError();
+  scheduleRun(100);
+}
+
+function syncPairMode() {
+  const test = $('testMode'), haar = $('pairs').value === 'haar';
+  if (haar) {
+    if (!test.disabled) testModeBeforeHaar = test.value;
+    test.value = 'analytic'; test.disabled = true;
+    test.title = 'Haar integration requires analytically averaging test shots.';
+  } else {
+    if (test.disabled) { test.disabled = false; test.value = testModeBeforeHaar; }
+    test.title = 'Choose exact test-shot averaging or explicit test frequency sampling.';
+  }
+}
+
+function syncDomainControls() {
+  const mode = $('plotMode').value, normalized = $('rangeUnits').value === 'normalized';
+  const horizontal = mode === 'horizontal', vertical = mode === 'vertical';
+  $('outMin').disabled = vertical; $('outMax').disabled = vertical;
+  $('trMin').disabled = horizontal; $('trMax').disabled = horizontal;
+  $('sliceControls').style.display = mode === 'map' ? 'none' : 'flex';
+  $('sliceValues').disabled = mode === 'map';
+  $('sliceLabel').textContent = `Fixed ${horizontal ? 'n_tr' : 'n_out'} values${normalized ? ' / d²' : ''}`;
+  document.querySelectorAll('.rangeUnit').forEach((label) => { label.textContent = normalized ? ' / d²' : ''; });
+  $('resolutionLabel').textContent = mode === 'map' ? 'Grid samples / axis' : 'Samples / varying axis';
+  $('resolution').disabled = $('allCounts').checked;
+  $('runButton').textContent = mode === 'map' ? 'Recompute map' : 'Recompute slices';
+  $('criticalHint').textContent = mode === 'map'
+    ? 'Every integer on the three critical lines, plus nearby samples. Only points inside your ranges are computed.'
+    : 'Adds threshold crossings and ±1 neighbors. A slice on a d² threshold samples every integer in its varying range.';
+  try {
+    const domain = readDomain();
+    const { outBounds, trBounds, nOuts, nTrs, fixedValues } = domain;
+    $('resolutionCap').textContent = mode === 'map'
+      ? `${nOuts.length} × ${nTrs.length} distinct background samples`
+      : `${horizontal ? nOuts.length : nTrs.length} base samples per slice`;
+    const varying = horizontal ? `n_out: ${outBounds.min}–${outBounds.max}` : `n_tr: ${trBounds.min}–${trBounds.max}`;
+    $('rangeSummary').textContent = mode === 'map'
+      ? `Integer counts · n_out: ${outBounds.min}–${outBounds.max} · n_tr: ${trBounds.min}–${trBounds.max}`
+      : `${varying} · fixed ${horizontal ? 'n_tr' : 'n_out'}: ${fixedValues.join(', ')}`;
+  } catch (error) {
+    $('resolutionCap').textContent = 'Sample count is limited only by available integer counts';
+    $('rangeSummary').textContent = error.message;
+  }
+}
+
+function syncChartControls() {
+  const mode = settings?.plotMode || $('plotMode').value;
+  const map = mode === 'map';
+  $('mapViewControls').hidden = !map;
+  $('threeStyleWrap').style.display = map && display.view === '3d' ? 'inline-flex' : 'none';
+  $('colorRangeWrap').hidden = !map;
+  $('legendOut').hidden = !map && mode !== 'horizontal';
+  $('legendTr').hidden = !map && mode !== 'vertical';
+  $('legendDiagonal').hidden = !map;
+  $('legendSamples').textContent = map
+    ? (settings?.includeCritical ?? $('criticalScans').checked) ? '● exact scans · ±1 neighbors' : 'Distinct integer grid samples'
+    : '● computed slice samples';
+  $('chartHeadline').textContent = map ? 'Prediction mean-squared error' : `${mode === 'horizontal' ? 'Horizontal' : 'Vertical'} slices · prediction MSE`;
+  plotEl.setAttribute('aria-label', map
+    ? 'Interactive MSE heatmap, 3D surface, or adjoining discrete sample bars across outcome and training counts'
+    : `${mode === 'horizontal' ? 'Horizontal slices: MSE versus outcome count at fixed training sizes' : 'Vertical slices: MSE versus training size at fixed outcome counts'}`);
+}
+
+function convertRangeUnits() {
+  const d = Number($('dimension').value);
+  const next = $('rangeUnits').value;
+  if (!Number.isSafeInteger(d) || d < 2 || !Number.isSafeInteger(d * d)) {
+    $('rangeUnits').value = previousRangeUnits;
+    showInputError('Enter a valid Hilbert dimension before converting range units.');
+    return;
+  }
+  const oldFactor = previousRangeUnits === 'normalized' ? d * d : 1;
+  const newFactor = next === 'normalized' ? d * d : 1;
+  const convert = (text) => {
+    if (!text.trim() || !Number.isFinite(Number(text))) return text;
+    return String(Number(text) * oldFactor / newFactor);
+  };
+  for (const id of ['outMin', 'outMax', 'trMin', 'trMax']) $(id).value = convert($(id).value);
+  $('sliceValues').value = $('sliceValues').value.split(/([,;\s]+)/).map((token) => /^[,;\s]+$/.test(token) ? token : convert(token)).join('');
+  previousRangeUnits = next;
+  syncDomainControls();
+  // Unit conversion changes the controls, not the physical domain or results.
+}
+
+function resetRanges() {
+  selectCustomPreset();
+  const d = Number($('dimension').value) || 3;
+  const factor = $('rangeUnits').value === 'normalized' ? 1 : d * d;
+  $('outMin').value = '0'; $('trMin').value = '0';
+  $('outMax').value = String(2.5 * factor); $('trMax').value = String(2.5 * factor);
+  $('sliceValues').value = String(factor);
+  syncDomainControls(); scheduleRun(100);
+}
+
+function toggleInf(which) {
+  const button = $(which === 'N' ? 'trainInf' : 'testInf');
+  setInfinity(which, !button.classList.contains('active'));
+  selectCustomPreset();
+  scheduleRun(120);
+}
+
+function scheduleRun(delay = 350) {
+  if (!plotlyReady) return; // Bootstrap will run once using current inputs.
+  clearTimeout(timer);
+  timer = setTimeout(() => { timer = null; startRun(); }, delay);
+}
+
+function createWorkerURL() {
+  if (typeof Worker === 'undefined' || typeof Blob === 'undefined' ||
+      typeof URL.createObjectURL !== 'function') {
+    throw new Error('This browser does not support Blob-backed Web Workers.');
+  }
+  return URL.createObjectURL(new Blob([$('workerSource').textContent], { type: 'text/javascript' }));
+}
+
+function terminateWorker() {
+  if (!worker) return;
+  // Explicitly detach handlers capturing the task plan before terminating.
+  worker.onmessage = null;
+  worker.onerror = null;
+  worker.terminate();
+  worker = null;
+}
+
+function stopRun() {
+  const wasRunning = worker !== null, wasScheduled = timer !== null;
+  clearTimeout(timer); timer = null;
+  terminateWorker();
+  if (!wasRunning && !wasScheduled) return;
+  $('emptyOverlay').style.display = 'none';
+  const complete = settings && results.size === settings.pointCount;
+  setStatus(complete ? 'Recompute canceled' : loaded ? 'Stopped · partial results' : 'Stopped');
+  $('progressText').textContent = complete ? 'Previous results retained' : loaded ? 'Partial results retained' : 'Stopped';
+  if (settings) requestDraw(10);
+}
+
+function workerSettings(config) {
+  // Explicit data-transfer contract: no DOM, geometry, caches or functions.
+  const { d, tasks, N, M, shotModel, testMode, R, seed, rcond,
+    mix, resamplePair, haarPair, gamma } = config;
+  return { d, tasks, N, M, shotModel, testMode, R, seed, rcond,
+    mix, resamplePair, haarPair, gamma };
+}
+
+function startRun() {
+  if (!plotlyReady) return;
+  clearTimeout(timer); timer = null;
+  let nextSettings;
+  try { nextSettings = readSettings(); }
+  catch (error) { setStatus('Check inputs', 'error'); showInputError(error.message); return; }
+  terminateWorker();
+  runId++;
+  settings = nextSettings;
+  results = new Map(); summaryCache = new WeakMap(); loaded = 0; pin = null; shown = null;
+  const fitCount = settings.pointCount * settings.R;
+  const largestTask = settings.tasks.reduce((size, task) =>
+    Math.max(size, task.nOut * task.nTrs[task.nTrs.length - 1]), 0);
+  $('costNote').hidden = fitCount < 3000 && largestTask < 10000;
+  $('costNote').textContent = `Workload: ${fitCount.toLocaleString()} fits; largest sampled training matrix has ${largestTask.toLocaleString()} entries. Large runs may take significant time or memory; Stop cancels the worker.`;
+  const { d, R, N, M, gamma, nOuts, nTrs, tasks, plotMode } = settings;
+  const thisRun = runId;
+  showInputError(); resetInspector();
+  $('unpin').style.display = 'none';
+  $('geometryPill').innerHTML = `d = <strong>${d}</strong> · d² = <strong>${d * d}</strong>`;
+  $('gridText').textContent = plotMode === 'map'
+    ? `${nOuts.length}×${nTrs.length} grid · ${settings.pointCount - settings.gridCount} extra`
+    : `${settings.fixedValues.length} ${settings.fixedValues.length === 1 ? 'slice' : 'slices'} · ${settings.pointCount} points`;
+  const average = settings.haarPair ? 'Haar ⟨O, σ, ε⟩ exact' : settings.testMode === 'analytic' ? 'test-shot averaged' : 'sampled test';
+  const orientation = plotMode === 'map' ? '' : plotMode === 'horizontal' ? ' · fixed n_tr; n_out varies' : ' · fixed n_out; n_tr varies';
+  $('chartSubtitle').textContent = `N = ${N === null ? '∞' : N.toLocaleString()} · M = ${M === null ? '∞' : M.toLocaleString()} · γ = ${fmt(gamma)} · R = ${R} · ${average}${orientation}`;
+  syncDomainControls(); syncChartControls();
+  updateProgress(0, 'Starting Monte Carlo…'); setStatus(`Computing 0/${tasks.length}`, 'busy');
+  $('emptyOverlay').style.display = initialPlot ? 'none' : 'block';
+  started = performance.now();
+  try {
+    // A page restored from BFCache may need to recreate its Blob URL.
+    if (!workerUrl) workerUrl = createWorkerURL();
+    const runningWorker = new Worker(workerUrl);
+    worker = runningWorker;
+    runningWorker.onmessage = (event) => {
+      if (worker !== runningWorker || thisRun !== runId) return;
+      const message = event.data;
+      if (message.type === 'column') {
+        for (let i = 0; i < message.nTrs.length; i++) results.set(pointKey(message.nOut, message.nTrs[i]), message.column[i]);
+        loaded = message.done;
+        setStatus(`Computing ${loaded}/${tasks.length}`, 'busy');
+        updateProgress(loaded / tasks.length, `Outcome sizes ${loaded}/${tasks.length}`);
+        const now = performance.now();
+        if (loaded === 1 || loaded === tasks.length || now - PlotView.lastProgressDraw() > 800) {
+          PlotView.markProgressDraw(now);
+          requestDraw(80);
+        }
+      } else if (message.type === 'complete') {
+        terminateWorker();
+        setStatus(`Computed · ${(Math.round((performance.now() - started) / 100) / 10)} s`);
+        updateProgress(1, `Completed · ${(settings.pointCount * R).toLocaleString()} fits`);
+        requestDraw(20);
+      } else if (message.type === 'error') {
+        terminateWorker(); setStatus('Calculation error', 'error');
+        $('progressText').textContent = message.message;
+        showInputError(message.message); console.error(message.stack || message.message);
+        requestDraw(20);
+      }
+    };
+    runningWorker.onerror = (event) => {
+      if (worker !== runningWorker || thisRun !== runId) return;
+      terminateWorker(); setStatus('Worker error', 'error');
+      showInputError(event.message || 'Worker execution failed.');
+      $('emptyOverlay').style.display = 'none';
+    };
+    runningWorker.postMessage({ type: 'run', settings: workerSettings(settings) });
+  } catch (error) {
+    terminateWorker(); setStatus('Browser blocked worker', 'error');
+    showInputError(error.message); $('emptyOverlay').style.display = 'none';
+  }
+  requestDraw(40);
+}
+
+function setSegment(name, value) {
+  display[name] = value;
+  document.querySelectorAll(`[data-${name}]`).forEach((button) => {
+    const active = button.getAttribute(`data-${name}`) === value;
+    button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
+  });
+  syncChartControls();
+  if (settings) requestDraw(10);
+  if (name === 'stat') refreshInspector();
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob), link = document.createElement('a');
+  link.href = url; link.download = filename;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvValue(value) {
+  const text = String(value);
+  return /[,"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportCSV() {
+  if (!settings || !results.size) { setStatus('No results yet', 'error'); return; }
+  // Preserve existing column names/order; append domain and reproducibility metadata.
+  const header = [
+    'd', 'n_out', 'n_tr', 'n_out_over_d2', 'n_tr_over_d2', 'R', 'N', 'M', 'gamma',
+    'sampling', 'test_mode', 'pair_mode', 'statistic', 'MSE_mean', 'MSE_median', 'MSE_p10', 'MSE_p90',
+    'bias2_mean', 'test_variance_mean', 'median_SVD_rank', 'median_condition', 'critical_type', 'on_heatmap_grid', 'seed',
+    'plot_mode', 'range_units', 'out_min_count', 'out_max_count', 'tr_min_count', 'tr_max_count',
+    'fixed_slice_counts', 'rcond', 'test_depolarization', 'critical_scans',
+    'all_integer_samples', 'requested_samples_per_axis', 'preset',
+  ];
+  const lines = [header.join(',')];
+  const xset = new Set(settings.nOuts), yset = new Set(settings.nTrs), d2 = settings.d ** 2;
+  for (const task of settings.tasks) for (const nt of task.nTrs) {
+    const no = task.nOut, stats = summarize(getCell(no, nt));
+    if (!stats) continue;
+    const key = pointKey(no, nt);
+    const near = settings.nearKeys.has(key) || Math.abs(no - nt) === 1 || Math.abs(no - d2) === 1 || Math.abs(nt - d2) === 1;
+    const type = settings.exactKeys.has(key) ? 'exact' : near ? 'near' : 'grid';
+    const row = [
+      settings.d, no, nt, no / d2, nt / d2, settings.R,
+      settings.N === null ? 'inf' : settings.N, settings.M === null ? 'inf' : settings.M, settings.gamma,
+      settings.shotModel, settings.testMode, settings.pairMode, display.stat, stats.mean, stats.median, stats.q10, stats.q90,
+      stats.bias, stats.testVar, stats.rank, stats.condition, type, xset.has(no) && yset.has(nt) ? 1 : 0, settings.seed,
+      settings.plotMode, settings.rangeUnits, settings.outBounds.min, settings.outBounds.max,
+      settings.trBounds.min, settings.trBounds.max, settings.fixedValues.join(';'), settings.rcond, settings.mix,
+      settings.includeCritical ? 1 : 0,
+      settings.allCounts ? 1 : 0, settings.allCounts ? 'all' : settings.density, $('preset').value,
+    ];
+    lines.push(row.map(csvValue).join(','));
+  }
+  downloadBlob(new Blob([`${lines.join('\n')}\n`], { type: 'text/csv;charset=utf-8' }),
+    `qelm_mse_d${settings.d}_${settings.plotMode}_seed${settings.seed}.csv`);
+}
+
+async function exportImage() {
+  if (!settings || !results.size) { setStatus('No results yet', 'error'); return; }
+  // Finish a pending view change before capturing its image.
+  PlotView.cancelPendingDraw();
+  await PlotView.getRenderPromise();
+  PlotView.cancelPendingDraw();
+  await redraw();
+  const filename = `qelm_mse_d${settings.d}_${settings.plotMode}_${display.stat}_${display.scale}`;
+  try {
+    if (fallbackState.active) {
+      fallbackCanvas.toBlob((blob) => {
+        if (blob) downloadBlob(blob, `${filename}_3d.png`);
+        else { setStatus('Image export failed', 'error'); showInputError('The browser could not create the plot image.'); }
+      }, 'image/png');
+    } else {
+      await Plotly.downloadImage(plotEl, { format: 'png', filename, width: 1400, height: 1050, scale: 1.7 });
+    }
+  } catch (error) { setStatus('Image export failed', 'error'); showInputError(error.message); }
+}
+
+// Only domain-affecting inputs need to regenerate the grid preview.
+const domainInputIds = new Set(['dimension', 'resolution', 'allCounts', 'plotMode',
+  'outMin', 'outMax', 'trMin', 'trMax', 'sliceValues', 'criticalScans']);
+for (const input of document.querySelectorAll('[data-model]')) {
+  if (input.id === 'rangeUnits') continue; // Unit conversion is display-only.
+  const eventName = input.tagName === 'SELECT' || input.type === 'range' || input.type === 'checkbox' ? 'change' : 'input';
+  input.addEventListener(eventName, () => {
+    selectCustomPreset();
+    if (input.id === 'mix') {
+      $('mixExact').value = input.value;
+      $('mixValue').textContent = input.value;
+    }
+    if (input.id === 'mixExact') {
+      const value = Number(input.value);
+      if (input.value.trim() && Number.isFinite(value) && value >= 0 && value <= 1) {
+        $('mix').value = String(value);
+        $('mixValue').textContent = input.value;
+      }
+    }
+    if (input.id === 'labelNoiseEnabled') $('gamma').disabled = !input.checked;
+    if (input.id === 'pairs') syncPairMode();
+    if (input.id === 'testMode' && !$('testMode').disabled) testModeBeforeHaar = input.value;
+    if (domainInputIds.has(input.id)) syncDomainControls();
+    scheduleRun(eventName === 'input' ? 580 : 180);
+  });
+  if (eventName === 'input') input.addEventListener('change', () => scheduleRun(100));
+}
+$('rangeUnits').addEventListener('change', convertRangeUnits);
+$('preset').addEventListener('change', () => applyPreset($('preset').value));
+for (const id of ['fixCountAxes', 'fixMseAxis', 'axisOutMin', 'axisOutMax', 'axisTrMin', 'axisTrMax', 'axisMseMin', 'axisMseMax']) {
+  const input = $(id);
+  input.addEventListener(input.type === 'checkbox' ? 'change' : 'input', updateAxisDisplay);
+}
+$('resetRanges').addEventListener('click', resetRanges);
+$('trainInf').addEventListener('click', () => toggleInf('N'));
+$('testInf').addEventListener('click', () => toggleInf('M'));
+$('shuffleSeed').addEventListener('click', () => {
+  selectCustomPreset();
+  $('seed').value = String(((Number($('seed').value) + 1009) * 1664525 + 1013904223) >>> 0);
+  scheduleRun(70);
+});
+$('runButton').addEventListener('click', startRun);
+$('cancelButton').addEventListener('click', stopRun);
+$('unpin').addEventListener('click', () => {
+  pin = null; $('unpin').style.display = 'none'; refreshInspector();
+  if (fallbackState.active) renderSoftware3D();
+});
+$('colorRange').addEventListener('change', () => {
+  display.colorRange = $('colorRange').value; if (settings) requestDraw(10);
+});
+$('threeStyle').addEventListener('change', () => {
+  display.threeStyle = $('threeStyle').value; if (settings) requestDraw(10);
+});
+$('exportCsv').addEventListener('click', exportCSV);
+$('exportPng').addEventListener('click', exportImage);
+for (const name of ['stat', 'view', 'scale']) {
+  document.querySelectorAll(`[data-${name}]`).forEach((button) => {
+    button.addEventListener('click', () => setSegment(name, button.getAttribute(`data-${name}`)));
+  });
+}
+let resizeFrame = 0;
+window.addEventListener('resize', () => {
+  if (resizeFrame) return;
+  resizeFrame = requestAnimationFrame(() => {
+    resizeFrame = 0;
+    // Plotly's responsive=true already owns its own resize listener.
+    if (fallbackState.active) renderSoftware3D();
+  });
+});
+window.addEventListener('pagehide', () => {
+  if (resizeFrame) { cancelAnimationFrame(resizeFrame); resizeFrame = 0; }
+  suspendedRun = worker !== null || timer !== null;
+  stopRun();
+  PlotView.cancelPendingDraw();
+  if (workerUrl) { URL.revokeObjectURL(workerUrl); workerUrl = null; }
+});
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted && !workerUrl) {
+    workerUrl = createWorkerURL();
+    if (suspendedRun) { suspendedRun = false; requestDraw(20); }
+  }
+});
+
+// A version-pinned alternative CDN is tried if the primary host is unavailable.
+// Script insertion (rather than ES-module imports) also works from file:// URLs.
+async function ensurePlotly() {
+  if (window.Plotly?.react) return;
+  const sources = [
+    'https://cdn.plot.ly/plotly-3.3.1.min.js',
+    'https://cdn.jsdelivr.net/npm/plotly.js-dist-min@3.3.1/plotly.min.js',
+  ];
+  for (const src of sources) {
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = () => { script.remove(); reject(new Error(`Failed to load ${src}`)); };
+        document.head.appendChild(script);
+      });
+      if (window.Plotly?.react) return;
+    } catch (error) {
+      console.warn(error.message);
+    }
+  }
+  throw new Error('Could not load Plotly 3.3.1 from either CDN. Check your internet connection and reload.');
+}
+
+let plotlyReady = false;
+(async function initialize() {
+  try {
+    syncPairMode(); syncDomainControls(); syncAxisControls(); syncChartControls();
+    workerUrl = createWorkerURL();
+    setStatus('Loading plots', 'busy');
+    await ensurePlotly();
+    plotlyReady = true;
+    startRun();
+  } catch (error) {
+    setStatus('Initialization error', 'error'); showInputError(error.message);
+  }
+})();
+})();
+</script>
+</body>
+</html>
