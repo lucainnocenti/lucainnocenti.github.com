@@ -1239,131 +1239,23 @@
     </div>
   </div>
 
-<!-- Plotly and the version-pinned QELM Lab modules load from a CDN. -->
+<!-- Plotly and the version-pinned QELM Lab bundle load from a CDN. -->
 
 <!-- Simulation kernel imports the shared QELM Lab numerical modules. -->
 <script id="workerSource" type="text/plain">
 'use strict';
 
-// Deterministic PRNG; distinct streams for frames, states, and shot noise.
-function mixSeed(a, b, c) {
-  let x = ((a >>> 0) ^ Math.imul((b + 0x9e3779b9) | 0, 0x85ebca6b) ^ Math.imul((c + 0x27d4eb2d) | 0, 0xc2b2ae35)) >>> 0;
-  x ^= x >>> 16; x = Math.imul(x, 0x7feb352d) >>> 0;
-  x ^= x >>> 15; x = Math.imul(x, 0x846ca68b) >>> 0;
-  return (x ^ (x >>> 16)) >>> 0;
-}
-// Seed mixing is retained from the original to keep its stream partitioning.
-// State and frame generation are supplied by QELM Lab.
-const RNG = Random;
-const samplePure = randomPureState;
+// Random streams, Haar sampling, frames, shot noise and Hilbert–Schmidt
+// coordinates come from QELM Lab (imported above); the worker keeps the model.
 function overlapSq(a,b) {
   let r=0,im=0;
   for(let j=0;j<a.re.length;j++) {r+=a.re[j]*b.re[j]+a.im[j]*b.im[j]; im+=a.re[j]*b.im[j]-a.im[j]*b.re[j];}
   return r*r+im*im;
 }
-// Preserve the original interleaved real/imaginary Gaussian draw order.
-function frame(m, d, rng) {
-  let batch = [], index = 0;
-  const legacyOrder = {normal() {
-    if (index === 0) batch = Array.from({length: 2 * m}, () => rng.normal());
-    const value = batch[index < m ? 2 * index : 2 * (index - m) + 1];
-    index = (index + 1) % (2 * m);
-    return value;
-  }};
-  return randomIsometry(m, d, legacyOrder);
-}
-function frameProb(columns, psi) {
-  const p = frameProbabilities(columns, psi);
-  const total = p.reduce((sum, x) => sum + x, 0);
-  return p.map(x => x / total);
-}
-function lgamma(z) {
-  const q=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.984369578019572e-6,1.5056327351493116e-7];
-  if(z<0.5) return Math.log(Math.PI)-Math.log(Math.sin(Math.PI*z))-lgamma(1-z);
-  z-=1;let x=q[0];for(let i=1;i<9;i++)x+=q[i]/(z+i);
-  const t=z+7.5;return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
-}
-// Exact binomial inverse-by-probability-mass search, started at the mode.
-// Complexity near O(sqrt(n p (1-p))) rather than O(n) for large shot budgets.
-function binomial(n,p,rng) {
-  if(n<=0||p<=0)return 0; if(p>=1)return n;
-  if(p>0.5)return n-binomial(n,1-p,rng);
-  if(n*p<24){ // exact geometric interarrival implementation for sparse successes
-    let successes=0,pos=0,logq=Math.log1p(-p);
-    while(pos<n){pos+=1+Math.floor(Math.log(rng.uniform())/logq);if(pos<=n)successes++;}
-    return successes;
-  }
-  const k=Math.floor((n+1)*p),q=1-p;
-  let prob=Math.exp(lgamma(n+1)-lgamma(k+1)-lgamma(n-k+1)+k*Math.log(p)+(n-k)*Math.log1p(-p));
-  let u=rng.uniform(); if(u<prob)return k;u-=prob;
-  let left=prob,right=prob;
-  for(let s=1;s<=n;s++){
-    if(k-s>=0){const from=k-s+1;left*=from/(n-from+1)*q/p;
-      if(u<left)return k-s;u-=left;
-    }
-    if(k+s<=n){const from=k+s-1;right*=(n-from)/(from+1)*p/q;
-      if(u<right)return k+s;u-=right;
-    }
-    if((k-s<0)&&(k+s>n))break;
-  }
-  // Only reachable in extreme floating-point roundoff in computing the modal mass.
-  return Math.min(n,Math.max(0,k));
-}
 function sampleProb(p,shots,model,rng){
-  const m=p.length;
-  if(shots===null)return p;
-  const out=new Float64Array(m);
-  if(model==='gaussian'){
-    const v=new Float64Array(m); let total=0;
-    for(let a=0;a<m;a++){v[a]=Math.sqrt(Math.max(0,p[a]))*rng.normal();total+=v[a];}
-    const fac=1/Math.sqrt(shots);
-    for(let a=0;a<m;a++)out[a]=p[a]+fac*(v[a]-p[a]*total);
-    return out;
-  }
-  let rem=shots,mass=1;
-  for(let a=0;a<m-1;a++){
-    const pr=mass>0?Math.max(0,Math.min(1,p[a]/mass)):0;
-    const k=binomial(rem,pr,rng);
-    out[a]=k/shots; rem-=k;mass-=p[a];
-  }
-  out[m-1]=rem/shots;
-  return out;
+  return shots===null?p:sampleFrequencies(p,shots,rng,{model,validate:false});
 }
-function dot(a,b){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*b[i];return s;}
 
-// Coordinates in an orthonormal REAL Hilbert-Schmidt basis of Hermitian matrices:
-// diagonal entries followed by sqrt(2) Re/Im of upper-triangle entries.
-// Their Euclidean dot product is exactly Tr(A B).
-function pureFeatures(psi){
-  const d=psi.re.length,f=new Float64Array(d*d),sqrt2=Math.SQRT2;
-  for(let j=0;j<d;j++)f[j]=psi.re[j]*psi.re[j]+psi.im[j]*psi.im[j];
-  let k=d;
-  for(let j=0;j<d;j++)for(let l=j+1;l<d;l++){
-    f[k++]=sqrt2*(psi.re[j]*psi.re[l]+psi.im[j]*psi.im[l]);
-    f[k++]=sqrt2*(psi.im[j]*psi.re[l]-psi.re[j]*psi.im[l]);
-  }
-  return f;
-}
-function frameFeatures(columns){
-  const d=columns.length,m=columns[0].re.length,sqrt2=Math.SQRT2;
-  const effects=new Array(m),traces=new Float64Array(m);
-  for(let a=0;a<m;a++){
-    const f=new Float64Array(d*d);
-    for(let j=0;j<d;j++){
-      const re=columns[j].re[a],im=columns[j].im[a];
-      traces[a]+=f[j]=re*re+im*im;
-    }
-    let k=d;
-    for(let j=0;j<d;j++)for(let l=j+1;l<d;l++){
-      const rj=columns[j].re[a],ij=columns[j].im[a];
-      const rl=columns[l].re[a],il=columns[l].im[a];
-      f[k++]=sqrt2*(rj*rl+ij*il);
-      f[k++]=sqrt2*(rj*il-ij*rl);
-    }
-    effects[a]=f;
-  }
-  return {effects,traces};
-}
 // E_O [ ||X o||^2 ] = (||X||_F^2 + ||X i||^2)/[d(d+1)],
 // E_O [ (i^T X o)^2 ] = (||i^T X||^2 + (i^T X i)^2)/[d(d+1)]
 // where i represents the identity and o the Haar-random rank-one projector.
@@ -1417,76 +1309,47 @@ function haarConditionalError(B, aRowNormSq, noiseHsSq, noiseTraceSq, cfg){
   return {bias,shot};
 }
 
-// One-sided Jacobi SVD applied to A (training rows x output columns).
-// Computes min-norm least-squares solution A^+y without forming A^T A,
-// preserving small singular values and handling both tall/wide matrices.
-// rowCount makes a prefix view without copying the list of sampled rows.
+// Min-norm ridge solution from QELM Lab's one-sided Jacobi SVD of A (training
+// rows x output columns), which never forms A^T A and so keeps small singular
+// values accurate. rowCount makes a prefix view without copying sampled rows.
 function solvePseudo(rows,y,rcond,ridge,haar=null,rowCount=rows.length){
-  const m=rowCount,n=rows[0].length,flip=m<n;
-  const nr=flip?n:m,nc=flip?m:n;
-  const C=new Array(nc),V=new Array(nc);
-  for(let j=0;j<nc;j++){
-    const col=new Float64Array(nr),v=new Float64Array(nc);v[j]=1;
-    if(flip){const src=rows[j];for(let i=0;i<nr;i++)col[i]=src[i];}
-    else{for(let i=0;i<nr;i++)col[i]=rows[i][j];}
-    C[j]=col;V[j]=v;
-  }
-  const tol=1.5e-13;
-  let sweeps=0;
-  for(;sweeps<28;sweeps++){
-    let rotations=0;
-    for(let p=0;p<nc-1;p++){
-      const cp=C[p],vp=V[p];
-      for(let q=p+1;q<nc;q++){
-        const cq=C[q],vq=V[q];let alpha=0,beta=0,gamma=0;
-        for(let i=0;i<nr;i++){const x=cp[i],z=cq[i];alpha+=x*x;beta+=z*z;gamma+=x*z;}
-        if(alpha===0||beta===0||Math.abs(gamma)<=tol*Math.sqrt(alpha*beta))continue;
-        const zeta=(beta-alpha)/(2*gamma);
-        const t=(zeta>=0?1:-1)/(Math.abs(zeta)+Math.hypot(1,zeta));
-        const c=1/Math.sqrt(1+t*t),s=c*t;
-        for(let i=0;i<nr;i++){const x=cp[i],z=cq[i];cp[i]=c*x-s*z;cq[i]=s*x+c*z;}
-        for(let i=0;i<nc;i++){const x=vp[i],z=vq[i];vp[i]=c*x-s*z;vq[i]=s*x+c*z;}
-        rotations++;
-      }
-    }
-    if(!rotations)break;
-  }
-  const ss=new Float64Array(nc);let maxS=0;
-  for(let j=0;j<nc;j++){ss[j]=dot(C[j],C[j]);if(ss[j]>maxS)maxS=ss[j];}
-  const threshold=maxS*rcond*rcond;
-  let minS=Infinity,rank=0;
+  const n=rows[0].length,m=rowCount;
+  const {values,u,v,sweeps}=svd(rows,{rowCount});
+  const threshold=values[0]*rcond;
+  let rank=0;
   const w=haar?null:new Float64Array(n);
   const D=haar?haar.d*haar.d:0;
   const B=haar?Array.from({length:n},()=>new Float64Array(D)):null;
   const rowA2=haar?new Float64Array(n):null;
   let noiseHsSq=0,noiseTraceSq=0;
-  for(let j=0;j<nc;j++){
-    if(!(ss[j]>threshold))continue;
-    rank++;minS=Math.min(minS,ss[j]);
-    // For every retained SVD mode, the ridge map includes vecOut * vecTrain^T / (s_j^2 + ridge).
-    // Exactly one of the two vectors is unnormalized (its squared norm s_j^2).
-    const vecTrain=flip?V[j]:C[j],vecOut=flip?C[j]:V[j],invS2=ridgeSpectralFactor(ss[j],ridge);
+  for(let j=0;j<values.length;j++){
+    const sigma=values[j];
+    if(!(sigma>threshold))continue;
+    rank++;
+    // Each retained mode adds g v u^T to the ridge map, with g = s/(s^2 + ridge).
+    const uj=u[j],vj=v[j],g=sigma*ridgeSpectralFactor(sigma*sigma,ridge);
     if(!haar){
-      const coeff=dot(vecTrain,y)*invS2;
-      for(let a=0;a<n;a++)w[a]+=coeff*vecOut[a];
+      let proj=0;for(let i=0;i<m;i++)proj+=uj[i]*y[i];
+      const coeff=g*proj;
+      for(let a=0;a<n;a++)w[a]+=coeff*vj[a];
       continue;
     }
     // B = (P^T)^+ U, where U_i contains the Hermitian coordinates of rho_i.
     const trainMoment=new Float64Array(D),effectMoment=new Float64Array(D);
     for(let i=0;i<m;i++){
-      const c=vecTrain[i],u=haar.trainingFeatures[i];
-      for(let k=0;k<D;k++)trainMoment[k]+=c*u[k];
+      const c=uj[i],f=haar.trainingFeatures[i];
+      for(let k=0;k<D;k++)trainMoment[k]+=c*f[k];
     }
     for(let a=0;a<n;a++){
-      const c=vecOut[a],row=B[a],e=haar.effects[a];
+      const c=vj[a],row=B[a],e=haar.effects[a];
       for(let k=0;k<D;k++){
-        row[k]+=c*trainMoment[k]*invS2;
+        row[k]+=g*c*trainMoment[k];
         effectMoment[k]+=c*e[k];
       }
     }
-    // The left singular vectors are orthogonal: gamma^2 covariance can be
+    // The left singular vectors are orthonormal: gamma^2 covariance can be
     // integrated without constructing the entire nOut x nTr pseudoinverse.
-    const factor=(flip?1:ss[j])*invS2*invS2;
+    const factor=g*g;
     let norm=0,tr=0;
     for(let k=0;k<D;k++){
       norm+=effectMoment[k]*effectMoment[k];
@@ -1494,9 +1357,9 @@ function solvePseudo(rows,y,rcond,ridge,haar=null,rowCount=rows.length){
     }
     noiseHsSq+=factor*norm;
     noiseTraceSq+=factor*tr*tr;
-    for(let a=0;a<n;a++)rowA2[a]+=factor*vecOut[a]*vecOut[a];
+    for(let a=0;a<n;a++)rowA2[a]+=factor*vj[a]*vj[a];
   }
-  const info={rank,condition:rank>0?Math.sqrt(maxS/minS):Infinity,sweeps};
+  const info={rank,condition:rank>0?values[0]/values[rank-1]:Infinity,sweeps};
   if(haar)return {...info,...haarConditionalError(B,rowA2,noiseHsSq,noiseTraceSq,haar)};
   return {...info,w};
 }
@@ -1509,34 +1372,34 @@ function predictStats(w,p,y,M){
 function run(settings,send){
   const {d,tasks,N,M,shotModel,testMode,R,seed,rcond,ridge,resamplePair,haarPair,gamma}=settings;
   const seed0=seed>>>0;
-  const fixedRng=new RNG(mixSeed(seed0,701,23));
-  const fixedTarget=samplePure(d,fixedRng),fixedSigma=samplePure(d,fixedRng);
+  const fixedRng=new Random(mixSeed(seed0,701,23));
+  const fixedTarget=randomPureState(d,fixedRng),fixedSigma=randomPureState(d,fixedRng);
   for(let ix=0;ix<tasks.length;ix++){
     const {nOut,nTrs}=tasks[ix];
     const maxTr=nTrs[nTrs.length-1];
     const col=nTrs.map(()=>({loss:[],bias:[],testVar:[],rank:[],condition:[]}));
     for(let r=0;r<R;r++){
-      const pairRng = new RNG(mixSeed(seed0,701,r+24));
-      const target=resamplePair?samplePure(d,pairRng):fixedTarget;
-      const sigma=resamplePair?samplePure(d,pairRng):fixedSigma;
+      const pairRng=new Random(mixSeed(seed0,701,r+24));
+      const target=resamplePair?randomPureState(d,pairRng):fixedTarget;
+      const sigma=resamplePair?randomPureState(d,pairRng):fixedSigma;
       const truth=overlapSq(target,sigma);
-      const rngStates=new RNG(mixSeed(seed0,1103,r+1));
+      const rngStates=new Random(mixSeed(seed0,1103,r+1));
       // Outcome-independent label noise, shared across nOut for the same realization.
-      const rngLabels=gamma>0?new RNG(mixSeed(seed0,3701,r+1)):null;
-      const rngPOVM=new RNG(mixSeed(seed0,2297,Math.imul(nOut,1009)+r));
-      const rngShots=new RNG(mixSeed(seed0,3533,Math.imul(nOut,1009)+r));
-      const rngTest=new RNG(mixSeed(seed0,4969,Math.imul(nOut,1009)+r));
-      const Q=frame(nOut,d,rngPOVM);
-      const pSig=haarPair?null:frameProb(Q,sigma);
+      const rngLabels=gamma>0?new Random(mixSeed(seed0,3701,r+1)):null;
+      const rngPOVM=new Random(mixSeed(seed0,2297,Math.imul(nOut,1009)+r));
+      const rngShots=new Random(mixSeed(seed0,3533,Math.imul(nOut,1009)+r));
+      const rngTest=new Random(mixSeed(seed0,4969,Math.imul(nOut,1009)+r));
+      const Q=randomIsometry(nOut,d,rngPOVM),frame=createFrame(Q);
+      const pSig=haarPair?null:frame.probabilities(sigma);
       const pSigSample=(!haarPair&&M!==null&&testMode==='sample')?sampleProb(pSig,M,shotModel,rngTest):null;
-      const frameData=haarPair?frameFeatures(Q):null;
+      const frameData=haarPair?effectCoordinates(Q):null;
       const rows=new Array(maxTr),labels=haarPair?null:new Float64Array(maxTr);
       const trainingFeatures=haarPair?new Array(maxTr):null;
       for(let it=0;it<maxTr;it++){
-        const psi=samplePure(d,rngStates);
-        if(haarPair)trainingFeatures[it]=pureFeatures(psi);
+        const psi=randomPureState(d,rngStates);
+        if(haarPair)trainingFeatures[it]=stateCoordinates(psi);
         else labels[it]=overlapSq(target,psi)+(rngLabels?gamma*rngLabels.normal():0);
-        rows[it]=sampleProb(frameProb(Q,psi),N,shotModel,rngShots);
+        rows[it]=sampleProb(frame.probabilities(psi),N,shotModel,rngShots);
       }
       // Reuse the complete arrays and one Haar context: the solver reads
       // precisely the first nt rows and labels at each requested count.
@@ -3146,13 +3009,18 @@ function scheduleRun(delay = 350) {
   timer = setTimeout(() => { timer = null; startRun(); }, delay);
 }
 
+// Version-pinned QELM Lab bundle. It is part of the preset-cache fingerprint,
+// so changing the version invalidates presets computed with another release.
+const QELM_LIBRARY_URL = 'https://cdn.jsdelivr.net/gh/lucainnocenti/qelm-js@v0.3.0/dist/qelm.js';
+const QELM_WORKER_IMPORTS = ['Random', 'mixSeed', 'randomPureState', 'randomIsometry', 'createFrame',
+  'sampleFrequencies', 'svd', 'ridgeSpectralFactor', 'dot', 'stateCoordinates', 'effectCoordinates'];
+
 function createWorkerURL() {
   if (typeof Worker === 'undefined' || typeof Blob === 'undefined' ||
       typeof URL.createObjectURL !== 'function') {
     throw new Error('This browser does not support Blob-backed Web Workers.');
   }
-  const libraryURL = 'https://cdn.jsdelivr.net/gh/lucainnocenti/qelm-js@v0.2.0/src/index.js';
-  const imports = `import { Random, randomPureState, randomIsometry, frameProbabilities, ridgeSpectralFactor } from ${JSON.stringify(libraryURL)};\n`;
+  const imports = `import { ${QELM_WORKER_IMPORTS.join(', ')} } from ${JSON.stringify(QELM_LIBRARY_URL)};\n`;
   return URL.createObjectURL(new Blob([imports, $('workerSource').textContent], { type: 'text/javascript' }));
 }
 
@@ -3189,8 +3057,8 @@ const PresetCache = (() => {
   const statisticKeys = ['mean', 'median', 'q10', 'q90', 'bias', 'testVar', 'condition', 'rank'];
   let indexed = null;
 
-  // An inexpensive fingerprint prevents loading cached results after the
-  // numerical worker itself has been edited in a future HTML revision.
+  // An inexpensive fingerprint of the worker source and the pinned library URL
+  // prevents loading cached results after either changes.
   function workerFingerprint(source) {
     let hash = 2166136261;
     for (let i = 0; i < source.length; i++) {
@@ -3201,22 +3069,15 @@ const PresetCache = (() => {
 
   function indexData() {
     indexed = new Map();
-    const expected = workerFingerprint($('workerSource').textContent);
+    const expected = workerFingerprint(QELM_LIBRARY_URL + '\n' + $('workerSource').textContent);
     const datasets = globalThis.QELM_PRESET_DATA;
     if (!Array.isArray(datasets)) {
       console.warn('Preset data files are not available. Put the three qelm_preset_*.js files beside the HTML to load cached results.');
       return;
     }
-    // The library-backed worker retains the original worker's random draw order
-    // and numerical model. Accept caches from that exact original source only
-    // while this validated adapter is unchanged. Other workers still require an
-    // exact fingerprint match. Settings and grid are checked separately below.
-    const legacyWorker = '815b1616';
-    const validatedAdapter = 'bdf48e8e';
+    // Settings and grid are checked separately below.
     for (const dataset of datasets) {
-      const compatible = dataset.workerFingerprint === expected ||
-        (expected === validatedAdapter && [legacyWorker, 'f6b9fa65'].includes(dataset.workerFingerprint));
-      if (dataset.version !== 1 || !compatible) {
+      if (dataset.version !== 1 || dataset.workerFingerprint !== expected) {
         console.warn('Ignoring an incompatible precomputed dataset; its simulation worker does not match this HTML.');
         continue;
       }
