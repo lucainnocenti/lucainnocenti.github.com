@@ -1239,12 +1239,9 @@
     </div>
   </div>
 
-<!-- External Plotly is loaded by the application (primary CDN plus fallback).
-     The rest of this file, including the simulation worker, is self-contained.
-     No ES modules or build tools are required, including for file:// use. -->
+<!-- Plotly and the version-pinned QELM Lab modules load from a CDN. -->
 
-<!-- Simulation kernel: same mathematical algorithm, random streams, and results;
-     repeated array-prefix copies have been removed from the fit loop. -->
+<!-- Simulation kernel imports the shared QELM Lab numerical modules. -->
 <script id="workerSource" type="text/plain">
 'use strict';
 
@@ -1255,66 +1252,33 @@ function mixSeed(a, b, c) {
   x ^= x >>> 15; x = Math.imul(x, 0x846ca68b) >>> 0;
   return (x ^ (x >>> 16)) >>> 0;
 }
-class RNG {
-  constructor(seed) { this.s = seed >>> 0 || 0x12345678; this.spare = null; }
-  uniform() { let x = this.s; x ^= x << 13; x ^= x >>> 17; x ^= x << 5; this.s = x >>> 0; return (this.s + 0.5) / 4294967296; }
-  normal() {
-    if (this.spare !== null) { const z=this.spare; this.spare=null; return z; }
-    const r=Math.sqrt(-2*Math.log(this.uniform()));
-    const t=2*Math.PI*this.uniform(); this.spare=r*Math.sin(t); return r*Math.cos(t);
-  }
-}
-function samplePure(d,rng) {
-  const re=new Float64Array(d), im=new Float64Array(d); let norm=0;
-  for (let j=0;j<d;j++){ const a=rng.normal(),b=rng.normal(); re[j]=a; im[j]=b; norm+=a*a+b*b; }
-  const inv=1/Math.sqrt(norm); for(let j=0;j<d;j++){re[j]*=inv; im[j]*=inv;}
-  return {re,im};
-}
+// Seed mixing is retained from the original to keep its stream partitioning.
+// State and frame generation are supplied by QELM Lab.
+const RNG = Random;
+const samplePure = randomPureState;
 function overlapSq(a,b) {
   let r=0,im=0;
   for(let j=0;j<a.re.length;j++) {r+=a.re[j]*b.re[j]+a.im[j]*b.im[j]; im+=a.re[j]*b.im[j]-a.im[j]*b.re[j];}
   return r*r+im*im;
 }
-// Haar-isometric frame Q, Q^dagger Q = I_d. Effects E_a = Q^dagger |a><a| Q are rank one.
-function frame(m,d,rng) {
-  const columns=[];
-  for(let j=0;j<d;j++) {
-    const re=new Float64Array(m), im=new Float64Array(m);
-    for(let a=0;a<m;a++){re[a]=rng.normal(); im[a]=rng.normal();}
-    for(let pass=0;pass<2;pass++) for(let k=0;k<j;k++) {
-      const prev=columns[k]; let cr=0,ci=0;
-      for(let a=0;a<m;a++) { cr+=prev.re[a]*re[a]+prev.im[a]*im[a]; ci+=prev.re[a]*im[a]-prev.im[a]*re[a]; }
-      for(let a=0;a<m;a++){ re[a]-=prev.re[a]*cr-prev.im[a]*ci; im[a]-=prev.re[a]*ci+prev.im[a]*cr; }
-    }
-    let n2=0; for(let a=0;a<m;a++) n2+=re[a]*re[a]+im[a]*im[a];
-    const inv=1/Math.sqrt(n2); for(let a=0;a<m;a++){re[a]*=inv;im[a]*=inv;}
-    columns.push({re,im});
-  }
-  return columns;
+// Preserve the original interleaved real/imaginary Gaussian draw order.
+function frame(m, d, rng) {
+  let batch = [], index = 0;
+  const legacyOrder = {normal() {
+    if (index === 0) batch = Array.from({length: 2 * m}, () => rng.normal());
+    const value = batch[index < m ? 2 * index : 2 * (index - m) + 1];
+    index = (index + 1) % (2 * m);
+    return value;
+  }};
+  return randomIsometry(m, d, legacyOrder);
 }
-function frameProb(columns,psi) {
-  const m=columns[0].re.length, d=columns.length, p=new Float64Array(m);
-  let total=0;
-  for(let a=0;a<m;a++){
-    let rr=0,ii=0;
-    for(let j=0;j<d;j++){
-      const cr=columns[j].re[a],ci=columns[j].im[a];
-      rr+=cr*psi.re[j]-ci*psi.im[j]; ii+=cr*psi.im[j]+ci*psi.re[j];
-    }
-    p[a]=rr*rr+ii*ii;total+=p[a];
-  }
-  // Removes at most floating-point roundoff from the Gram-Schmidt normalization.
-  for(let a=0;a<m;a++)p[a]/=total;
-  return p;
+function frameProb(columns, psi) {
+  const p = frameProbabilities(columns, psi);
+  const total = p.reduce((sum, x) => sum + x, 0);
+  return p.map(x => x / total);
 }
-function mixedProb(frameCols,psi,mix){
-  const p=frameProb(frameCols,psi);
-  if(mix>0){const m=p.length,d=frameCols.length;
-    for(let a=0;a<m;a++) {let norm=0;for(let j=0;j<d;j++){const col=frameCols[j];norm+=col.re[a]*col.re[a]+col.im[a]*col.im[a];}
-      p[a]=(1-mix)*p[a]+mix*norm/d;
-    }
-  }
-  return p;
+function mixedProb(columns, psi, mix) {
+  return frameProbabilities(columns, psi, mix);
 }
 function lgamma(z) {
   const q=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.984369578019572e-6,1.5056327351493116e-7];
@@ -3192,7 +3156,9 @@ function createWorkerURL() {
       typeof URL.createObjectURL !== 'function') {
     throw new Error('This browser does not support Blob-backed Web Workers.');
   }
-  return URL.createObjectURL(new Blob([$('workerSource').textContent], { type: 'text/javascript' }));
+  const libraryURL = 'https://cdn.jsdelivr.net/gh/lucainnocenti/qelm-js@v0.1.0/src/index.js';
+  const imports = `import { Random, randomPureState, randomIsometry, frameProbabilities } from ${JSON.stringify(libraryURL)};\n`;
+  return URL.createObjectURL(new Blob([imports, $('workerSource').textContent], { type: 'text/javascript' }));
 }
 
 function terminateWorker() {
@@ -3246,8 +3212,16 @@ const PresetCache = (() => {
       console.warn('Preset data files are not available. Put the three qelm_preset_*.js files beside the HTML to load cached results.');
       return;
     }
+    // The library-backed worker retains the original worker's random draw order
+    // and numerical model. Accept caches from that exact original source only
+    // while this validated adapter is unchanged. Other workers still require an
+    // exact fingerprint match. Settings and grid are checked separately below.
+    const legacyWorker = '815b1616';
+    const validatedAdapter = 'f6b9fa65';
     for (const dataset of datasets) {
-      if (dataset.version !== 1 || dataset.workerFingerprint !== expected) {
+      const compatible = dataset.workerFingerprint === expected ||
+        (expected === validatedAdapter && dataset.workerFingerprint === legacyWorker);
+      if (dataset.version !== 1 || !compatible) {
         console.warn('Ignoring an incompatible precomputed dataset; its simulation worker does not match this HTML.');
         continue;
       }
@@ -3334,7 +3308,7 @@ function startRun(forceRecompute = false) {
   try {
     // A page restored from BFCache may need to recreate its Blob URL.
     if (!workerUrl) workerUrl = createWorkerURL();
-    const runningWorker = new Worker(workerUrl);
+    const runningWorker = new Worker(workerUrl, { type: 'module' });
     worker = runningWorker;
     runningWorker.onmessage = (event) => {
       if (worker !== runningWorker || thisRun !== runId) return;
