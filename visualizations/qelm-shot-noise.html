@@ -947,7 +947,7 @@
   .detailBody { display:flex; flex-direction:column; gap:8px; padding:0 0 2px; }
   .detailBody .rangeRow { gap:5px; }
   .detailBody .rangeRow input[type=range] { width:100%; }
-  .detailBody #mixExact { flex:0 0 65px; width:65px; min-width:0; }
+
   .seedControls { width:100%; gap:4px; }
   .seedControls input { flex:1; min-width:0; }
   .seedControls button { height:29px; }
@@ -1107,14 +1107,14 @@
   </section>
 
   <details class="controlBlock compactDetails advancedBlock">
-    <summary title="Advanced shot-noise model, target ensemble, depolarization, pseudoinverse cutoff and seed">Advanced model &amp; solver</summary>
+    <summary title="Advanced shot-noise model, target ensemble, ridge penalty, singular-value cutoff and seed">Advanced model &amp; solver</summary>
     <div class="detailBody">
       <div class="settingGrid grid2">
         <div class="setting"><label for="shotModel" title="Gaussian covariance has the multinomial covariance including sum-to-one; exact multinomial draws are discrete.">Training noise</label><select id="shotModel" data-model><option value="gaussian" selected>Gaussian cov.</option><option value="multinomial">Multinomial</option></select></div>
         <div class="setting"><label for="testMode" title="Average the inference-shot contribution analytically or sample explicit test frequencies.">Test-shot error</label><select id="testMode" data-model><option value="analytic" selected>Analytic mean</option><option value="sample">Sample shots</option></select></div>
         <div class="setting span2"><label for="pairs" title="Exact Haar integration averages target O and test σ (plus independent Gaussian label noise) conditional on each training realization and POVM.">Target O / test σ</label><select id="pairs" data-model><option value="fixed">Fixed across map</option><option value="vary">Haar-redraw each run</option><option value="haar" selected>Haar average (exact)</option></select></div>
-        <div class="setting span2"><label for="mixExact" title="Depolarization λ in σ = (1−λ)|ψ⟩⟨ψ| + λI/d, 0 ≤ λ ≤ 1.">Test depolarization λ</label><div class="rangeRow"><input type="range" id="mix" data-model min="0" max="1" step="0.001" value="0"><input id="mixExact" data-model type="number" min="0" max="1" step="any" value="0" aria-label="Exact test depolarization" title="Set exact test depolarization λ"><output id="mixValue" for="mix" hidden>0.00</output></div></div>
-        <div class="setting"><label for="rcond" title="Relative cutoff used to truncate numerically zero singular values; no ridge regularization.">SVD rcond</label><input id="rcond" data-model type="number" min="0" step="any" value="1e-10"></div>
+        <div class="setting span2"><label for="ridge" title="Ridge penalty λ in ||Pw − y||² + λ||w||²; zero uses the truncated pseudoinverse.">Ridge penalty λ</label><input id="ridge" data-model type="number" min="0" step="any" value="0" title="Nonnegative ridge penalty λ; enter values such as 0.001"></div>
+        <div class="setting"><label for="rcond" title="Relative cutoff used to truncate singular values before applying ridge.">SVD rcond</label><input id="rcond" data-model type="number" min="0" step="any" value="1e-10"></div>
         <div class="setting"><label for="seed" title="Deterministic seed; the pseudorandom generator uses the low 32 bits.">Random seed</label><div class="seedControls"><input id="seed" data-model type="number" step="1" value="271828"><button type="button" id="shuffleSeed" class="tinyButton" title="Resample seed" aria-label="Resample seed">↻</button></div></div>
       </div>
     </div>
@@ -1230,9 +1230,9 @@
       <details>
         <summary>Method · interpretation · model assumptions</summary>
         <div class="footContent">
-    Each realization draws a Haar-isometric frame Q ∈ ℂ<sup>n_out×d</sup> (Q†Q = I), giving rank-one effects E<sub>a</sub> = Q†|a⟩⟨a|Q. It is <em>the same POVM</em> for every training state and σ in that realization. Training states are Haar pure; the rank-one target O and test state σ are fixed across the map by default, with a switch for exact Haar integration of both. True training labels are y<sub>i</sub> = Tr(ρ<sub>i</sub>O). If enabled, the observed labels for regression are y<sub>i</sub> + ε<sub>i</sub>, with independent ε<sub>i</sub> ∼ N(0, γ²), even for N = ∞; the MSE is measured against the <em>noiseless</em> target Tr(σO). The fit is the minimum-norm Moore–Penrose solution w = (P<sup>T</sup>)<sup>+</sup>y<sub>observed</sub>, computed by a direct one-sided Jacobi SVD (not normal equations). No ridge regularization is applied; rcond only truncates numerically zero singular values.<br>
-    The default plotted sample for each training realization is the <em>test-shot-averaged MSE</em>: <span class="formula">(w·pσ − yσ)² + [Σₐ pσ,ₐ wₐ² − (w·pσ)²]/M</span>. Thus the finite M contribution is included exactly, without extra Monte Carlo scatter. “Sample test shots” instead draws one measured frequency vector per realization, except in Haar-average mode where exact integration is enforced. The Haar-average mode uses the pure-state second moment E[O⊗O]=(I+SWAP)/[d(d+1)] and performs the exact O, σ and independent Gaussian label-noise averages <em>conditional on each training dataset, POVM and estimated P</em>; finite-M test-shot variance is also included analytically. For depolarization λ the test state is (1−λ)|ψ⟩⟨ψ|+λI/d, with |ψ⟩ Haar pure. Only the training states, POVM and N-shot training noise are Monte Carlo sampled in this mode. Mean/median refer to the distribution of these <em>conditional Haar-averaged MSEs</em>, not the distribution of individual random test errors. Training uses either genuine multinomial frequencies or Gaussian noise with covariance (diag p − ppᵀ)/N, including its sum-to-one constraint. All draws use a seeded pseudorandom generator. Mean and median aggregate <em>per-realization squared errors</em>, not squared mean predictions. The separate squared-bias and inference-variance plots show the ensemble mean of each component; component medians are not stored in the precomputed datasets. The rank-one-POVM domain requires n_out ≥ d. The outcome and training ranges are independently editable in integer counts or multiples of d². Sample density can be any positive safe integer, or every physically admissible integer in the chosen domain; parameter inputs are not subject to arbitrary upper caps. The separate axis controls optionally fix the displayed n_out, n_tr and raw value ranges independently of the computed domain. A fixed plotted-value range also fixes the heatmap/3D color limits; log plots transform those raw bounds. The physical restrictions d ≥ 2, n_out ≥ d, n_tr ≥ 1, N and M ≥ 1, γ ≥ 0, and 0 ≤ λ ≤ 1 remain. Counts and random seeds are limited to exactly represented JavaScript integers, and the pseudorandom generator uses the seed modulo 2³². The background grid uses <em>distinct integer</em> counts, spaced as uniformly as integer counts allow; each axis is capped by its own number of admissible counts. When the sample count permits, the d² coordinate is retained on each axis if it lies in the selected range. Horizontal slices fix n_tr and vary n_out; vertical slices fix n_out and vary n_tr. Slice mode computes only the selected rows or columns, and multiple fixed values can be compared on one plot. When enabled, critical scans separately evaluate <em>every integer</em> on n_out = n_tr, n_out = d², and n_tr = d² within the domain, plus one-count neighbors; slices sample the corresponding intersections and their neighbors. Circles on the joined surface/heatmap mark scans, including off-grid samples. The 3D joined surface linearly connects adjacent background grid values. The <em>3D discrete bars</em> mode draws every computed integer pair, including critical scans, without interpolating bar heights. Bar footprints meet at midpoint boundaries between neighboring outcome columns and, within each column, neighboring training counts. Sparse sampling therefore produces wider bars, while each height remains the statistic evaluated at its sampled integer pair. Color stretch may be robust (2nd–98th percentiles) or full range; neither alters reported values. Log colors floor positive values at 10<sup>−20</sup>.<br>
-    Near n_tr ≈ n_out, single-experiment errors can be heavy-tailed, making the sample mean sensitive to the realization count. The IC line n_out = d² and the training-span line n_tr = d² delimit exact-reconstruction capacity, but do not guarantee a small error at finite shots. At large d, fine grids and many realizations require significant CPU work. The test-depolarization slider changes only σ, not the pure training ensemble. The Haar-average mode treats Gaussian training-label noise analytically, even when γ ≠ 0; the original fixed/redrawn modes continue sampling label noise.
+    Each realization draws a Haar-isometric frame Q ∈ ℂ<sup>n_out×d</sup> (Q†Q = I), giving rank-one effects E<sub>a</sub> = Q†|a⟩⟨a|Q. It is <em>the same POVM</em> for every training state and σ in that realization. Training states are Haar pure; the rank-one target O and test state σ are fixed across the map by default, with a switch for exact Haar integration of both. True training labels are y<sub>i</sub> = Tr(ρ<sub>i</sub>O). If enabled, the observed labels for regression are y<sub>i</sub> + ε<sub>i</sub>, with independent ε<sub>i</sub> ∼ N(0, γ²), even for N = ∞; the MSE is measured against the <em>noiseless</em> target Tr(σO). The fit minimizes ||Pw − y<sub>observed</sub>||² + λ||w||² using a direct one-sided Jacobi SVD (not normal equations). λ = 0 gives the minimum-norm Moore–Penrose solution; rcond truncates small singular values before the ridge filter is applied. Rank and condition describe the retained singular values of P, before regularization.<br>
+    The default plotted sample for each training realization is the <em>test-shot-averaged MSE</em>: <span class="formula">(w·pσ − yσ)² + [Σₐ pσ,ₐ wₐ² − (w·pσ)²]/M</span>. Thus the finite M contribution is included exactly, without extra Monte Carlo scatter. “Sample test shots” instead draws one measured frequency vector per realization, except in Haar-average mode where exact integration is enforced. The Haar-average mode uses the pure-state second moment E[O⊗O]=(I+SWAP)/[d(d+1)] and performs the exact O, σ and independent Gaussian label-noise averages <em>conditional on each training dataset, POVM and estimated P</em>; finite-M test-shot variance is also included analytically. Only the training states, POVM and N-shot training noise are Monte Carlo sampled in this mode. Mean/median refer to the distribution of these <em>conditional Haar-averaged MSEs</em>, not the distribution of individual random test errors. Training uses either genuine multinomial frequencies or Gaussian noise with covariance (diag p − ppᵀ)/N, including its sum-to-one constraint. All draws use a seeded pseudorandom generator. Mean and median aggregate <em>per-realization squared errors</em>, not squared mean predictions. The separate squared-bias and inference-variance plots show the ensemble mean of each component; component medians are not stored in the precomputed datasets. The rank-one-POVM domain requires n_out ≥ d. The outcome and training ranges are independently editable in integer counts or multiples of d². Sample density can be any positive safe integer, or every physically admissible integer in the chosen domain; parameter inputs are not subject to arbitrary upper caps. The separate axis controls optionally fix the displayed n_out, n_tr and raw value ranges independently of the computed domain. A fixed plotted-value range also fixes the heatmap/3D color limits; log plots transform those raw bounds. The physical restrictions d ≥ 2, n_out ≥ d, n_tr ≥ 1, N and M ≥ 1, γ ≥ 0, and 0 ≤ λ ≤ 1 remain. Counts and random seeds are limited to exactly represented JavaScript integers, and the pseudorandom generator uses the seed modulo 2³². The background grid uses <em>distinct integer</em> counts, spaced as uniformly as integer counts allow; each axis is capped by its own number of admissible counts. When the sample count permits, the d² coordinate is retained on each axis if it lies in the selected range. Horizontal slices fix n_tr and vary n_out; vertical slices fix n_out and vary n_tr. Slice mode computes only the selected rows or columns, and multiple fixed values can be compared on one plot. When enabled, critical scans separately evaluate <em>every integer</em> on n_out = n_tr, n_out = d², and n_tr = d² within the domain, plus one-count neighbors; slices sample the corresponding intersections and their neighbors. Circles on the joined surface/heatmap mark scans, including off-grid samples. The 3D joined surface linearly connects adjacent background grid values. The <em>3D discrete bars</em> mode draws every computed integer pair, including critical scans, without interpolating bar heights. Bar footprints meet at midpoint boundaries between neighboring outcome columns and, within each column, neighboring training counts. Sparse sampling therefore produces wider bars, while each height remains the statistic evaluated at its sampled integer pair. Color stretch may be robust (2nd–98th percentiles) or full range; neither alters reported values. Log colors floor positive values at 10<sup>−20</sup>.<br>
+    Near n_tr ≈ n_out, single-experiment errors can be heavy-tailed, making the sample mean sensitive to the realization count. The IC line n_out = d² and the training-span line n_tr = d² delimit exact-reconstruction capacity, but do not guarantee a small error at finite shots. At large d, fine grids and many realizations require significant CPU work. The Haar-average mode treats Gaussian training-label noise analytically, even when γ ≠ 0; the original fixed/redrawn modes continue sampling label noise.
         </div>
       </details>
       <div class="footLinks">Sources: <a href="https://www.nature.com/articles/s42005-023-01233-w" target="_blank" rel="noopener">Communications Physics (2023)</a> · <a href="https://arxiv.org/abs/2610.12015" target="_blank" rel="noopener">arXiv:2610.12015 (2026)</a></div>
@@ -1276,9 +1276,6 @@ function frameProb(columns, psi) {
   const p = frameProbabilities(columns, psi);
   const total = p.reduce((sum, x) => sum + x, 0);
   return p.map(x => x / total);
-}
-function mixedProb(columns, psi, mix) {
-  return frameProbabilities(columns, psi, mix);
 }
 function lgamma(z) {
   const q=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.984369578019572e-6,1.5056327351493116e-7];
@@ -1392,9 +1389,9 @@ function haarMatrixMoments(mat,d,subtractIdentity){
 }
 // Fully analytic Haar average over both target O and test sigma, and over
 // independent Gaussian label noise. The training states, frame and noisy P
-// remain fixed for this calculation. lambda=1 is maximally mixed sigma.
+// remain fixed for this calculation.
 function haarConditionalError(B, aRowNormSq, noiseHsSq, noiseTraceSq, cfg){
-  const {effects,traces,d,gamma,M,mix}=cfg,D=d*d,m=B.length;
+  const {effects,traces,d,gamma,M}=cfg,D=d*d,m=B.length;
   const L=Array.from({length:D},()=>new Float64Array(D));
   let expectedWeightedW2=0;
   const denom=d*(d+1),gammaSq=gamma*gamma;
@@ -1409,8 +1406,7 @@ function haarConditionalError(B, aRowNormSq, noiseHsSq, noiseTraceSq, cfg){
   }
   const Hmom=haarMatrixMoments(L,d,true);
   const Lmom=haarMatrixMoments(L,d,false);
-  const a=(1-mix)*(1-mix)/denom;
-  const b=a+mix*(2-mix)/(d*d);
+  const a=1/denom, b=a;
   const noise=a*noiseHsSq+b*noiseTraceSq;
   const bias=Math.max(0,(a*Hmom.hs+b*Hmom.tr)/denom+gammaSq*noise);
   const expectedPredSq=(a*Lmom.hs+b*Lmom.tr)/denom+gammaSq*noise;
@@ -1425,7 +1421,7 @@ function haarConditionalError(B, aRowNormSq, noiseHsSq, noiseTraceSq, cfg){
 // Computes min-norm least-squares solution A^+y without forming A^T A,
 // preserving small singular values and handling both tall/wide matrices.
 // rowCount makes a prefix view without copying the list of sampled rows.
-function solvePseudo(rows,y,rcond,haar=null,rowCount=rows.length){
+function solvePseudo(rows,y,rcond,ridge,haar=null,rowCount=rows.length){
   const m=rowCount,n=rows[0].length,flip=m<n;
   const nr=flip?n:m,nc=flip?m:n;
   const C=new Array(nc),V=new Array(nc);
@@ -1467,9 +1463,9 @@ function solvePseudo(rows,y,rcond,haar=null,rowCount=rows.length){
   for(let j=0;j<nc;j++){
     if(!(ss[j]>threshold))continue;
     rank++;minS=Math.min(minS,ss[j]);
-    // For every retained SVD mode, A^+ includes vecOut * vecTrain^T / s_j^2.
+    // For every retained SVD mode, the ridge map includes vecOut * vecTrain^T / (s_j^2 + ridge).
     // Exactly one of the two vectors is unnormalized (its squared norm s_j^2).
-    const vecTrain=flip?V[j]:C[j],vecOut=flip?C[j]:V[j],invS2=1/ss[j];
+    const vecTrain=flip?V[j]:C[j],vecOut=flip?C[j]:V[j],invS2=ridgeSpectralFactor(ss[j],ridge);
     if(!haar){
       const coeff=dot(vecTrain,y)*invS2;
       for(let a=0;a<n;a++)w[a]+=coeff*vecOut[a];
@@ -1511,7 +1507,7 @@ function predictStats(w,p,y,M){
   return {predicted,bias,shot};
 }
 function run(settings,send){
-  const {d,tasks,N,M,shotModel,testMode,R,seed,rcond,mix,resamplePair,haarPair,gamma}=settings;
+  const {d,tasks,N,M,shotModel,testMode,R,seed,rcond,ridge,resamplePair,haarPair,gamma}=settings;
   const seed0=seed>>>0;
   const fixedRng=new RNG(mixSeed(seed0,701,23));
   const fixedTarget=samplePure(d,fixedRng),fixedSigma=samplePure(d,fixedRng);
@@ -1523,7 +1519,7 @@ function run(settings,send){
       const pairRng = new RNG(mixSeed(seed0,701,r+24));
       const target=resamplePair?samplePure(d,pairRng):fixedTarget;
       const sigma=resamplePair?samplePure(d,pairRng):fixedSigma;
-      const truth=(1-mix)*overlapSq(target,sigma)+mix/d;
+      const truth=overlapSq(target,sigma);
       const rngStates=new RNG(mixSeed(seed0,1103,r+1));
       // Outcome-independent label noise, shared across nOut for the same realization.
       const rngLabels=gamma>0?new RNG(mixSeed(seed0,3701,r+1)):null;
@@ -1531,7 +1527,7 @@ function run(settings,send){
       const rngShots=new RNG(mixSeed(seed0,3533,Math.imul(nOut,1009)+r));
       const rngTest=new RNG(mixSeed(seed0,4969,Math.imul(nOut,1009)+r));
       const Q=frame(nOut,d,rngPOVM);
-      const pSig=haarPair?null:mixedProb(Q,sigma,mix);
+      const pSig=haarPair?null:frameProb(Q,sigma);
       const pSigSample=(!haarPair&&M!==null&&testMode==='sample')?sampleProb(pSig,M,shotModel,rngTest):null;
       const frameData=haarPair?frameFeatures(Q):null;
       const rows=new Array(maxTr),labels=haarPair?null:new Float64Array(maxTr);
@@ -1544,10 +1540,10 @@ function run(settings,send){
       }
       // Reuse the complete arrays and one Haar context: the solver reads
       // precisely the first nt rows and labels at each requested count.
-      const haar=haarPair?{...frameData,trainingFeatures,d,gamma,M,mix}:null;
+      const haar=haarPair?{...frameData,trainingFeatures,d,gamma,M}:null;
       for(let iy=0;iy<nTrs.length;iy++){
         const nt=nTrs[iy];
-        const ans=solvePseudo(rows,haarPair?null:labels,rcond,haar,nt);
+        const ans=solvePseudo(rows,haarPair?null:labels,rcond,ridge,haar,nt);
         const ps=haarPair?{bias:ans.bias,shot:ans.shot}:predictStats(ans.w,pSig,truth,M);
         const loss=pSigSample?(dot(ans.w,pSigSample)-truth)**2:ps.bias+ps.shot;
         col[iy].loss.push(loss);col[iy].bias.push(ps.bias);
@@ -1816,7 +1812,7 @@ function readSettings() {
   const testMode = pairMode === 'haar' ? 'analytic' : $('testMode').value;
   const result = {
     ...domain, ...plan, R, N, M, gamma, pairMode, shotModel, testMode,
-    mix: numberVal('mixExact', 0, 1, 'Test depolarization λ'),
+    ridge: numberVal('ridge', 0, Infinity, 'Ridge penalty λ'),
     rcond: numberVal('rcond', 0, Infinity, 'SVD rcond cutoff'),
     seed: numberVal('seed', -Infinity, Infinity, 'Random seed', true),
     resamplePair: pairMode === 'vary', haarPair: pairMode === 'haar',
@@ -3028,8 +3024,7 @@ function applyPreset(name) {
   $('pairs').value = 'haar';
   $('shotModel').value = 'gaussian';
   $('testMode').value = testModeBeforeHaar = 'analytic';
-  $('mix').value = $('mixExact').value = '0';
-  $('mixValue').textContent = '0';
+  $('ridge').value = '0';
   $('rcond').value = '1e-10';
   $('seed').value = String(PRESET_CACHE_SEED);
   syncPairMode();
@@ -3156,8 +3151,8 @@ function createWorkerURL() {
       typeof URL.createObjectURL !== 'function') {
     throw new Error('This browser does not support Blob-backed Web Workers.');
   }
-  const libraryURL = 'https://cdn.jsdelivr.net/gh/lucainnocenti/qelm-js@v0.1.0/src/index.js';
-  const imports = `import { Random, randomPureState, randomIsometry, frameProbabilities } from ${JSON.stringify(libraryURL)};\n`;
+  const libraryURL = 'https://cdn.jsdelivr.net/gh/lucainnocenti/qelm-js@v0.2.0/src/index.js';
+  const imports = `import { Random, randomPureState, randomIsometry, frameProbabilities, ridgeSpectralFactor } from ${JSON.stringify(libraryURL)};\n`;
   return URL.createObjectURL(new Blob([imports, $('workerSource').textContent], { type: 'text/javascript' }));
 }
 
@@ -3185,9 +3180,9 @@ function stopRun() {
 function workerSettings(config) {
   // Explicit data-transfer contract: no DOM, geometry, caches or functions.
   const { d, tasks, N, M, shotModel, testMode, R, seed, rcond,
-    mix, resamplePair, haarPair, gamma } = config;
+    ridge, resamplePair, haarPair, gamma } = config;
   return { d, tasks, N, M, shotModel, testMode, R, seed, rcond,
-    mix, resamplePair, haarPair, gamma };
+    ridge, resamplePair, haarPair, gamma };
 }
 
 const PresetCache = (() => {
@@ -3217,10 +3212,10 @@ const PresetCache = (() => {
     // while this validated adapter is unchanged. Other workers still require an
     // exact fingerprint match. Settings and grid are checked separately below.
     const legacyWorker = '815b1616';
-    const validatedAdapter = 'f6b9fa65';
+    const validatedAdapter = 'bdf48e8e';
     for (const dataset of datasets) {
       const compatible = dataset.workerFingerprint === expected ||
-        (expected === validatedAdapter && dataset.workerFingerprint === legacyWorker);
+        (expected === validatedAdapter && [legacyWorker, 'f6b9fa65'].includes(dataset.workerFingerprint));
       if (dataset.version !== 1 || !compatible) {
         console.warn('Ignoring an incompatible precomputed dataset; its simulation worker does not match this HTML.');
         continue;
@@ -3231,7 +3226,11 @@ const PresetCache = (() => {
 
   function find(config) {
     if (indexed === null) indexData();
-    return indexed.get(JSON.stringify(workerSettings(config))) || null;
+    const current = workerSettings(config);
+    const found = indexed.get(JSON.stringify(current));
+    if (found || current.ridge !== 0) return found || null;
+    const {d, tasks, N, M, shotModel, testMode, R, seed, rcond, resamplePair, haarPair, gamma} = current;
+    return indexed.get(JSON.stringify({d, tasks, N, M, shotModel, testMode, R, seed, rcond, mix: 0, resamplePair, haarPair, gamma})) || null;
   }
 
   function restore(dataset, count) {
@@ -3380,7 +3379,7 @@ function exportCSV() {
     'sampling', 'test_mode', 'pair_mode', 'statistic', 'MSE_mean', 'MSE_median', 'MSE_p10', 'MSE_p90',
     'bias2_mean', 'test_variance_mean', 'median_SVD_rank', 'median_condition', 'critical_type', 'on_heatmap_grid', 'seed',
     'plot_mode', 'range_units', 'out_min_count', 'out_max_count', 'tr_min_count', 'tr_max_count',
-    'fixed_slice_counts', 'rcond', 'test_depolarization', 'critical_scans',
+    'fixed_slice_counts', 'rcond', 'ridge_lambda', 'critical_scans',
     'all_integer_samples', 'requested_samples_per_axis', 'preset', 'data_origin',
     'plot_metric', 'plot_aggregation', 'plot_value',
   ];
@@ -3398,7 +3397,7 @@ function exportCSV() {
       settings.shotModel, settings.testMode, settings.pairMode, display.stat, stats.mean, stats.median, stats.q10, stats.q90,
       stats.bias, stats.testVar, stats.rank, stats.condition, type, xset.has(no) && yset.has(nt) ? 1 : 0, settings.seed,
       settings.plotMode, settings.rangeUnits, settings.outBounds.min, settings.outBounds.max,
-      settings.trBounds.min, settings.trBounds.max, settings.fixedValues.join(';'), settings.rcond, settings.mix,
+      settings.trBounds.min, settings.trBounds.max, settings.fixedValues.join(';'), settings.rcond, settings.ridge,
       settings.includeCritical ? 1 : 0,
       settings.allCounts ? 1 : 0, settings.allCounts ? 'all' : settings.density, $('preset').value, dataOrigin,
       display.metric, display.metric === 'mse' ? display.stat : 'mean', stats.value,
@@ -3437,17 +3436,6 @@ for (const input of document.querySelectorAll('[data-model]')) {
   const eventName = input.tagName === 'SELECT' || input.type === 'range' || input.type === 'checkbox' ? 'change' : 'input';
   input.addEventListener(eventName, () => {
     selectCustomPreset();
-    if (input.id === 'mix') {
-      $('mixExact').value = input.value;
-      $('mixValue').textContent = input.value;
-    }
-    if (input.id === 'mixExact') {
-      const value = Number(input.value);
-      if (input.value.trim() && Number.isFinite(value) && value >= 0 && value <= 1) {
-        $('mix').value = String(value);
-        $('mixValue').textContent = input.value;
-      }
-    }
     if (input.id === 'labelNoiseEnabled') $('gamma').disabled = !input.checked;
     if (input.id === 'pairs') syncPairMode();
     if (input.id === 'testMode' && !$('testMode').disabled) testModeBeforeHaar = input.value;
