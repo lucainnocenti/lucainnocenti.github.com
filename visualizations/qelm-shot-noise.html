@@ -3009,9 +3009,10 @@ function scheduleRun(delay = 350) {
   timer = setTimeout(() => { timer = null; startRun(); }, delay);
 }
 
-// Version-pinned QELM Lab bundle. It is part of the preset-cache fingerprint,
-// so changing the version invalidates presets computed with another release.
-const QELM_LIBRARY_URL = 'https://cdn.jsdelivr.net/gh/lucainnocenti/qelm-js@v0.3.0/dist/qelm.js';
+// QELM Lab 0.3.0 bundle, pinned to its merge commit so the code can never change
+// under the page. The URL is part of the preset-cache fingerprint, so changing
+// it invalidates presets computed with another release.
+const QELM_LIBRARY_URL = 'https://cdn.jsdelivr.net/gh/lucainnocenti/qelm-js@f9dfeb9e027b523d38cd8705fc0f8adae1e72bc7/dist/qelm.js';
 const QELM_WORKER_IMPORTS = ['Random', 'mixSeed', 'randomPureState', 'randomIsometry', 'createFrame',
   'sampleFrequencies', 'svd', 'ridgeSpectralFactor', 'dot', 'stateCoordinates', 'effectCoordinates'];
 
