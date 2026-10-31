@@ -16,18 +16,18 @@ button{cursor:pointer}
 .muted{color:var(--muted)}
 
 /* Page header: one compact band */
-.shell{max-width:1810px;margin:auto;padding:14px 18px 36px}
-.header{display:flex;gap:22px;align-items:center;justify-content:space-between;margin-bottom:10px}
-h1{font-size:22px;line-height:1.15;letter-spacing:-.6px;font-weight:720;margin:0 0 3px}
+.shell{max-width:1810px;margin:auto;padding:10px 16px 24px}
+.header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:8px}
+h1{font-size:18px;line-height:1.2;letter-spacing:-.4px;font-weight:720;margin:0}
 .h1-arrow{color:#7ea1b4}
 .header p{margin:0;color:#a9bccb;font-size:12px;line-height:1.4}
-.header-meta{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:10.5px;color:var(--muted)}
-.status{display:flex;align-items:center;gap:7px;border:1px solid #2d554f;border-radius:20px;padding:3px 10px;background:#102922;color:#9fe3c8;font-size:10.5px;font-weight:740;white-space:nowrap}
+.header-meta{flex:0 1 auto;display:flex;align-items:center;gap:12px;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.status{display:flex;align-items:center;gap:7px;border:1px solid #2d554f;border-radius:20px;padding:2px 9px;background:#102922;color:#9fe3c8;font-size:10.5px;font-weight:740;white-space:nowrap}
 .status i{width:6px;height:6px;border-radius:50%;background:#8be3b4;box-shadow:0 0 8px #60d4a6}
 
 /* Cards and form controls */
-.panel,.control-deck,.theory{background:linear-gradient(155deg,rgba(21,36,54,.95),rgba(12,24,39,.99));border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 38px #00000015}
-.control-deck{margin-bottom:10px;overflow:hidden}
+.panel,.control-deck,.theory{background:linear-gradient(155deg,rgba(21,36,54,.95),rgba(12,24,39,.99));border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 38px #00000015}
+.control-deck{margin-bottom:8px;overflow:hidden}
 .control-label{display:flex;justify-content:space-between;align-items:center;gap:13px;font-size:11px;color:#b4c9d8;font-weight:700;letter-spacing:.5px;margin-bottom:9px;text-transform:uppercase}
 .control-label strong{font-weight:800;color:var(--white);font-size:15px;letter-spacing:0;text-transform:none}
 input[type=range]{accent-color:var(--cyan);width:100%;height:18px;cursor:pointer;margin:0}
@@ -43,46 +43,46 @@ select{border:1px solid #30485c;background:#102335;color:var(--text);padding:9px
 .btn:disabled{opacity:.40;cursor:not-allowed;background:#162b3d;border-color:#294052}
 
 /* Control deck: sliders, settings and actions, observable and test state */
-.slider-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 18px;padding:9px 16px 10px;border-bottom:1px solid var(--rule);background:rgba(9,30,47,.28)}
+.slider-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px 16px;padding:6px 14px 6px;border-bottom:1px solid var(--rule);background:rgba(9,30,47,.28)}
 .slot,.control-mini{min-width:0}
-.control-deck .control-label{font-size:10px;margin-bottom:3px;gap:6px;white-space:nowrap}
+.control-deck .control-label{font-size:10px;margin-bottom:1px;gap:6px;white-space:nowrap}
 .control-deck .control-label strong{font-size:12px;flex:0 0 auto}
-.settings-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;padding:7px 16px;border-bottom:1px solid var(--rule);background:rgba(6,17,29,.27)}
+.settings-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:5px 14px;border-bottom:1px solid var(--rule);background:rgba(6,17,29,.27)}
 .setting{display:flex;align-items:center;gap:8px}
 .setting-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#b4c9d8;white-space:nowrap}
-.setting select{width:auto;min-height:28px;padding:4px 8px;font-size:12px}
+.setting select{width:auto;min-height:24px;padding:2px 6px;font-size:11.5px}
 .segmented{display:flex;gap:4px}
-.segmented .btn,.actions .btn{padding:5px 10px;font-size:10.5px}
+.segmented .btn,.actions .btn{padding:3px 9px;font-size:10.5px}
 .actions{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
 .state-row{display:grid;grid-template-columns:1fr 1fr}
-.state-box{padding:7px 16px 9px;min-width:0}
+.state-box{padding:5px 14px 6px;min-width:0}
 .state-box+.state-box{border-left:1px solid var(--rule)}
-.state-head{display:flex;align-items:center;gap:12px;margin-bottom:4px;min-width:0}
+.state-head{display:flex;align-items:center;gap:12px;margin-bottom:1px;min-width:0}
 .state-head b{font-size:12px;white-space:nowrap}
 .state-head .math-static{font-weight:500;color:#9db5c6}
 .state-summary{flex:1 1 auto;min-width:0;display:flex;gap:12px;justify-content:flex-start;font-size:10px;color:#b2c4d5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .state-summary strong{color:var(--cyan);font-weight:700}
 .preset-group{display:flex;gap:4px;flex:0 0 auto}
-.preset-group .btn.small{padding:3px 8px;font-size:10px}
+.preset-group .btn.small{padding:2px 8px;font-size:10px}
 .state-sliders{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .state-sliders.three{grid-template-columns:1fr 1fr 1fr}
 .control-mini .control-label{margin-bottom:0}
 .control-mini .control-label strong{font-size:11px}
 
 /* Dashboard: three plot panels and a column with the two diagnostics plots */
-.dashboard{display:grid;grid-template-columns:1fr 1.06fr 1.04fr .98fr;gap:12px;align-items:stretch}
+.dashboard{display:grid;grid-template-columns:1fr 1.06fr 1.04fr .98fr;gap:8px;align-items:stretch}
 .panel{min-width:0;overflow:hidden;position:relative;display:flex;flex-direction:column}
-.panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px 0}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 11px 0}
 .panel-title{font-weight:750;letter-spacing:-.2px;font-size:13.5px;margin:0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .panel-index{font:700 10px ui-monospace,Consolas,monospace;color:var(--cyan);margin-right:7px;letter-spacing:.5px}
 .panel-desc{color:#89a5b7;font-size:10.5px;margin:1px 12px 0;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .panel-head select{width:auto;padding:3px 6px;font-size:10.5px;border-radius:7px}
 .plot-chip{white-space:nowrap;color:#91b0c3;background:#0d2435;border:1px solid #294052;border-radius:7px;padding:3px 6px;font-size:9.5px;flex:0 0 auto}
-canvas.main-canvas{width:100%;height:clamp(220px,calc(100vh - 478px),500px);flex:1 0 auto;display:block;touch-action:none;cursor:grab}
+canvas.main-canvas{width:100%;height:clamp(220px,calc(100vh - 372px),520px);flex:1 0 auto;display:block;touch-action:none;cursor:grab}
 canvas.main-canvas.dragging{cursor:grabbing}
 canvas.main-canvas:focus-visible,.plot-box canvas:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
 #histCanvas,#mseCanvas{cursor:crosshair}
-.plot-options{display:flex;gap:4px 11px;flex-wrap:wrap;align-items:center;padding:4px 12px 6px;font-size:10.5px;color:#a3b9ca}
+.plot-options{display:flex;gap:3px 10px;flex-wrap:wrap;align-items:center;padding:3px 11px 4px;font-size:10.5px;color:#a3b9ca}
 .plot-options label,.legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
 .legend-item{cursor:default}
 .plot-options input{margin:0}
@@ -96,13 +96,13 @@ canvas.main-canvas:focus-visible,.plot-box canvas:focus-visible{outline:2px soli
 .axis-buttons{display:flex;gap:4px;flex:0 0 auto}
 .axis-buttons .btn{padding:3px 8px;font-size:10px}
 .axis-buttons .btn:disabled{opacity:.42;cursor:default}
-.panel-details{margin:auto 0 0;border-top:1px solid #223749;padding:5px 12px 6px}
+.panel-details{margin:auto 0 0;border-top:1px solid #223749;padding:4px 11px 5px}
 .panel-details summary{font-size:10.5px;color:#a2c3d5}
 .panel-details[open] summary{margin-bottom:6px}
 .summary-math,.summary-note{color:#7796aa;font-size:10px;margin-left:4px}
 .table-foot{color:#6f90a6;font-size:10px;margin-top:6px}
-.mse-cards{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:2px 12px 8px}
-.stat{background:#102437;border:1px solid #263c4f;border-radius:9px;padding:6px 10px;min-width:0}
+.mse-cards{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:1px 11px 6px}
+.stat{background:#102437;border:1px solid #263c4f;border-radius:8px;padding:4px 9px;min-width:0}
 .stat-label{text-transform:uppercase;color:#8aa3b8;font-size:9.5px;letter-spacing:.6px;font-weight:750}
 .stat-value{color:#eaf6ff;font:700 clamp(14px,1.25vw,19px) ui-monospace,Consolas,monospace;margin-top:1px;white-space:nowrap}
 .stat-value.cyan{color:var(--cyan)}
@@ -113,16 +113,16 @@ canvas.main-canvas:focus-visible,.plot-box canvas:focus-visible{outline:2px soli
 .hist-notes{margin:7px 0 0;color:#8da7b8;font-size:10.5px;line-height:1.45}
 .hist-axis-label{margin:4px 0 0;color:#92aabc;font:10px/1.4 ui-monospace,Consolas,monospace}
 .hist-axis-label.locked{color:#b7ddf0}
-.diagnostics{display:flex;flex-direction:column;gap:12px;min-width:0}
+.diagnostics{display:flex;flex-direction:column;gap:8px;min-width:0}
 .diagnostics .panel{flex:1 1 0;min-height:0}
 .plot-box{position:relative;flex:1 1 0;min-height:110px;margin-top:2px}
 .plot-box canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .plot-inline-legend{display:flex;align-items:center;gap:3px 10px;flex-wrap:wrap;padding:2px 12px 3px;color:#a3bbcc;font-size:10px}
 .plot-inline-legend span{display:flex;align-items:center;gap:5px;white-space:nowrap}
-.readout{font:10.5px/1.45 ui-monospace,Consolas,monospace;color:#bcd0de;margin:0 12px;padding:4px 0 7px;border-top:1px solid #25384b}
+.readout{font:10.5px/1.45 ui-monospace,Consolas,monospace;color:#bcd0de;margin:0 11px;padding:3px 0 5px;border-top:1px solid #25384b}
 
 /* Notes below the dashboard */
-.explainer{margin-top:14px;padding:13px 17px 15px;font-size:12px;color:#b4c6d3;line-height:1.6}
+.explainer{margin-top:8px;padding:12px 16px 14px;font-size:12px;color:#b4c6d3;line-height:1.6}
 .explainer-head{font-size:13px;margin:0}
 .explainer-head+.setup-notes{margin-bottom:12px}
 .setup-notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding-top:6px;color:#a3bcce;font-size:11.5px;line-height:1.55}
@@ -140,7 +140,7 @@ canvas.main-canvas:focus-visible,.plot-box canvas:focus-visible{outline:2px soli
 .table-foot{color:#6f90a6;font-size:10px;margin-top:7px}
 
 /* Theory cards (MathJax SVG output) */
-.theory{margin-top:14px;padding:17px 19px 15px}
+.theory{margin-top:8px;padding:14px 16px 13px}
 .theory-head{font-size:13px;font-weight:760;margin-bottom:11px}
 .formula-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
 .formula{border:1px solid #274053;background:#0a1b2c;padding:15px 16px;border-radius:10px;min-width:0}
@@ -193,7 +193,16 @@ summary{color:#a2c3d5;cursor:pointer;font-size:11px;user-select:none}
 .m-dot::after{content:"˙"}
 .m-sqrt{border-top:.07em solid currentColor;padding:0 .1em}
 .plot-tooltip{pointer-events:none;position:fixed;z-index:99;display:none;max-width:240px;background:#071a2bea;border:1px solid #62879b;color:#f3faff;border-radius:8px;padding:8px 10px;font:11px/1.7 ui-monospace,Consolas,monospace;box-shadow:0 10px 22px #0008}
-.footer{color:#658196;font-size:10px;text-align:right;margin-top:17px}
+.footer{color:#658196;font-size:10px;text-align:right;margin-top:10px}
+/* Background notes: collapsed by default to keep the dashboard compact */
+details.notes{margin-top:8px}
+details.notes>summary{display:inline-block;padding:5px 12px;border:1px solid var(--line);border-radius:9px;background:#0f2133;color:#b9d3e3;font-size:11.5px;font-weight:650}
+details.notes>summary:hover{border-color:#6095ad}
+.intro{margin:0 0 10px;color:#a9bccb}
+/* While a slider is held and the update is deferred until release */
+body.stale .dashboard{opacity:.62;transition:opacity .12s}
+.stale-hint{display:none;color:var(--gold);font-weight:700}
+body.stale .stale-hint{display:inline}
 .footer a{color:inherit}
 .load-error{position:sticky;top:0;z-index:50;padding:10px 16px;background:#5a1f24;color:#ffd9d9;font:13px/1.4 system-ui,sans-serif}
 
@@ -204,6 +213,7 @@ summary{color:#a2c3d5;cursor:pointer;font-size:11px;user-select:none}
   .dashboard>.panel:nth-child(3){order:-2}
   .diagnostics{order:-1}
   .actions{margin-left:0}
+  .header-meta{flex-wrap:wrap;justify-content:flex-end;white-space:normal}
 }
 @media(max-width:1000px){
   .slider-row{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -242,15 +252,14 @@ summary{color:#a2c3d5;cursor:pointer;font-size:11px;user-select:none}
 <div class="shell">
   <header class="header">
     <div class="header-text">
-      <h1>QELM qubit prediction: shot noise <span class="h1-arrow">→</span> prediction uncertainty</h1>
-      <p>Training states on the Z-axis or random on the Bloch sphere, a random rank-1 POVM, finite shots N and M, and label noise γ shape the distribution of ridge predictions.</p>
+      <h1 title="Training states on the Z-axis or random on the Bloch sphere, a random rank-1 POVM, finite shots N and M, and label noise γ shape the distribution of ridge predictions.">QELM qubit prediction <span class="h1-arrow">·</span> shot noise <span class="h1-arrow">→</span> prediction uncertainty</h1>
     </div>
-    <div class="header-meta"><span class="status"><i></i> <span id="samplingStatus">Exact multinomial sampling</span></span><span class="mono" id="headerSeed">POVM seed 314159</span><span id="mathStatus">Calculations run locally</span></div>
+    <div class="header-meta"><span class="stale-hint">release slider to update</span><span class="status"><i></i> <span id="samplingStatus">Exact multinomial sampling</span></span><span class="mono" id="headerSeed">POVM seed 314159</span><span id="mathStatus">Calculations run locally</span></div>
   </header>
 
   <section class="control-deck" aria-label="Experiment controls">
     <div class="slider-row" aria-label="Sampling, noise, sizes and regularization">
-      <div class="slot"><div class="control-label"><span>Training shots</span><strong class="mono" id="shotsValue">200</strong></div><input aria-label="Training measurement shots N per state" type="range" id="shots" min="0" max="14" step="1" value="7"></div>
+      <div class="slot"><div class="control-label"><span>Training shots</span><strong class="mono" id="shotsValue">N = 200</strong></div><input aria-label="Training measurement shots N per state" type="range" id="shots" min="0" max="15" step="1" value="7"></div>
       <div class="slot"><div class="control-label"><span>Test shots</span><strong class="mono" id="testShotsValue">M = 200</strong></div><input aria-label="Test measurement shots M" type="range" id="testShots" min="0" max="15" step="1" value="7"></div>
       <div class="slot"><div class="control-label"><span>Label noise</span><strong class="mono" id="gammaValue">&#x03B3; = 0.10</strong></div><input aria-label="Gaussian standard deviation gamma of training labels" type="range" id="gamma" min="0" max="100" step="1" value="10"></div>
       <div class="slot"><div class="control-label"><span>Training states</span><strong class="mono" id="trainingCountValue">K = 5</strong></div><input type="range" id="trainingCount" min="2" max="30" step="1" value="5" aria-label="Number of training states K"></div>
@@ -346,9 +355,10 @@ summary{color:#a2c3d5;cursor:pointer;font-size:11px;user-select:none}
     </div>
   </section>
 
-  <section class="panel explainer"><h2 class="explainer-head">Current setup</h2><div class="setup-notes"><div id="outcomeHint">Random rank-1 POVM. The full A-outcome features enter regression; only the first three probabilities appear in the 3D view.</div>
+  <details class="notes"><summary>About this visualization: current setup, how to read the plots, model and estimator</summary>
+  <section class="panel explainer"><p class="intro">Training states on the Z-axis or random on the Bloch sphere, a random rank-1 POVM, finite shots N and M (either may be infinite), and label noise γ shape the distribution of ridge predictions for an unseen test state.</p><h2 class="explainer-head">Current setup</h2><div class="setup-notes"><div id="outcomeHint">Random rank-1 POVM. The full A-outcome features enter regression; only the first three probabilities appear in the 3D view.</div>
       <div id="trainingModeHint">Z-axis: K equally spaced Bloch vectors from +Z to −Z, including mixed states. Switch to the sphere for uniformly random pure states.</div>
-      <div id="samplerHint">Exact independent multinomial draws for 5 training states and the test state. Label noise stays Gaussian. With M = &#x221E;, test frequencies are exact.</div></div>
+      <div id="samplerHint">Exact independent multinomial draws for 5 training states and the test state. Label noise stays Gaussian. With N = &#x221E; or M = &#x221E;, the corresponding frequencies are exact.</div></div>
     <h2 class="explainer-head">How to interpret the geometry</h2><div class="explainer-columns"><p><strong>Projected covariance contours</strong> reflect the first three measured probabilities. Their characteristic widths scale as \(N^{-1/2}\) (test: \(M^{-1/2}\)). When \(A>3\) the first three coordinates need not sum to one: the permitted projected region is a tetrahedron, not a triangle.</p><p><strong>Singular-value curves</strong> compare full \(A\)-dimensional noisy and exact feature matrices, with/without centering across the \(K\) training states. Centering removes the constant-probability direction.</p><p><strong>Spectral conditioning.</strong> <span id="spectralInterpretation">Z-axis training generates at most two exact feature directions. Generic sphere training and \(A\ge 4\) can support four affine directions.</span></p><p><strong>Regularization risk.</strong> The MSE curve recomputes the prediction for every listed λ using the <em>same</em> training/test sampling and noisy labels, and compares each prediction with the exact test expectation. \(\operatorname{MSE}=\operatorname{Bias}^2+\operatorname{Var}\).</p><p><strong>Informational completeness.</strong> Two or three outcomes cannot determine all Bloch components. Generic rank-1 POVMs with \(A\ge 4\) outcomes can be informationally complete, but training restricted to the Z-axis still cannot identify responses to arbitrary off-axis states.</p></div></section>
 
   <section class="theory"><div class="theory-head">Model and estimator</div>
@@ -377,7 +387,7 @@ summary{color:#a2c3d5;cursor:pointer;font-size:11px;user-select:none}
         <div class="mathline">\(p_a(\sigma)=\operatorname{Tr}(\mu_a\sigma)\)</div>
         <div class="mathline">\(\hat o_\lambda=\hat{\mathbf p}(\sigma)^{\mathsf T}\hat{\mathbf w}_\lambda\)</div>
         <div class="mathline">\(o_{\mathrm{true}}=\operatorname{Tr}(O\sigma)\)</div>
-        <div class="mathline">\(M=\infty:\quad\hat{\mathbf p}(\sigma)=\mathbf p(\sigma)\)</div>
+        <div class="mathline">\(N=\infty:\ \hat{\mathbf p}_k=\mathbf p_k;\quad M=\infty:\ \hat{\mathbf p}(\sigma)=\mathbf p(\sigma)\)</div>
         <div class="mathline">\(\operatorname{MSE}(\lambda)=\mathbb E[(\hat o_\lambda-o_{\mathrm{true}})^2]\)</div>
       </div>
     </div>
@@ -389,6 +399,7 @@ summary{color:#a2c3d5;cursor:pointer;font-size:11px;user-select:none}
     </div>
     <details><summary>Inspect the randomly generated rank-1 POVM (effects, weights and directions)</summary><div id="povmInfo" class="povm-info"></div></details>
   </section>
+  </details>
   <div class="footer">Numerics by <a href="https://github.com/lucainnocenti/qelm-js">qelm-js</a> (loaded from a CDN) · formulas use MathJax 3 from a CDN when online, built-in rendering offline · mouse, touch and keyboard rotation</div>
 </div>
 <div class="plot-tooltip" id="tooltip"></div>
@@ -417,8 +428,7 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
   /* ================================================================
    * 1. Constants and small helpers
    * ================================================================ */
-  const SHOTS = [2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 25000, 50000];
-  const TEST_SHOTS = [...SHOTS, Infinity];
+  const SHOTS = [2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 25000, 50000, Infinity];   // N and M
   const RIDGES = [0, 1e-7, 3e-7, 1e-6, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10];
   const RUN_OPTIONS = [200, 400, 700, 1200, 2000];
   const MAX_K = 30, MAX_A = 20;
@@ -608,7 +618,7 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
     for (let b = 0; b < state.B; b++) {
       const P = draw.map(f => f(rng));
       // Only the raw spectrum is needed per run; the centered one is computed once, for the plotted realization.
-      samples[b] = {P, raw: gramEigen(P, false).eig, labelZ: trainBloch.map(() => labelRng.normal())};
+      samples[b] = {P, raw: state.N === Infinity ? exactEigen.raw : gramEigen(P, false).eig, labelZ: trainBloch.map(() => labelRng.normal())};
     }
     representative = samples[0];
     const c = gramEigen(representative.P, true);
@@ -680,24 +690,54 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
   }
 
   /* Compute scheduling: coalesce bursts of input events into one computation per frame. */
-  const pending = {scheduled: false, fresh: false, test: false};
+  /*
+   * The Monte Carlo runs synchronously; with many runs, states or outcomes one update can take
+   * hundreds of milliseconds. Running that on every input event while a slider is held starves
+   * the browser of pointer events and the slider stops following the pointer. So, while a slider
+   * is held, updates that recently took longer than a frame budget are deferred until release
+   * (the value labels still update immediately), and cheap updates stay live.
+   */
+  const pending = {scheduled: false, fresh: false, test: false, deferred: false};
+  const cost = {fresh: 0, fit: 0}, LIVE_BUDGET_MS = 45;
+  let sliderHeld = false;
   function requestCompute(fresh = false, refreshTest = false) {
     pending.fresh ||= fresh; pending.test ||= refreshTest;
+    if (sliderHeld && (pending.fresh ? cost.fresh : cost.fit) > LIVE_BUDGET_MS) {
+      pending.deferred = true;
+      document.body.classList.add('stale');
+      updateVectors(); updateVectorText();   // keep the readouts next to the sliders in sync
+      return;
+    }
+    scheduleCompute();
+  }
+  function scheduleCompute() {
+    pending.deferred = false;
     if (pending.scheduled) return;
     pending.scheduled = true;
     requestAnimationFrame(() => {
       const {fresh: f, test: t} = pending;
       Object.assign(pending, {scheduled: false, fresh: false, test: false});
       updateExperiment(f, t);
+      if (!pending.deferred) document.body.classList.remove('stale');
     });
   }
+  document.addEventListener('pointerdown', e => { if (e.target.matches?.('input[type=range]')) sliderHeld = true; }, true);
+  const releaseSlider = () => { if (!sliderHeld) return; sliderHeld = false; if (pending.deferred) scheduleCompute(); };
+  for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, releaseSlider, true);
+  window.addEventListener('blur', releaseSlider);
+  document.addEventListener('change', e => { if (e.target.matches?.('input[type=range]')) releaseSlider(); }, true);
   function updateExperiment(fresh, refreshTest = false) {
+    const t0 = performance.now();
     updateVectors();
     if (fresh) { createSamples(); fillTables(); }
     if (fresh || refreshTest) createTestSamples();
+    const t1 = performance.now();
     recomputeFits();
     updateReadouts();
     drawAll();
+    const t2 = performance.now();
+    cost.fit = fresh ? t2 - t1 : t2 - t0;   // timings drive the slider scheduling above
+    if (fresh) cost.fresh = t2 - t0;
   }
 
   /* ================================================================
@@ -956,7 +996,7 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
     circle(ctx, a[0], a[1], 11, 'rgba(255,255,255,.13)'); diamond(ctx, a[0], a[1], 6.8, '#f8fcff', '#b1ccdd');
     text(ctx, 'p(σ)', a[0] + 10, a[1] - 10, '#fff', font(11, true));
     tips.push({x: a[0], y: a[1], detail: `Exact test p(σ)<br>p = (${testP.map(x => x.toFixed(4)).join(', ')})<br>Shown: (${projected3(testP).map(x => x.toFixed(4)).join(', ')})`});
-    text(ctx, `N=${fmtN(state.N)} · M=${fmtShots(state.M)} · ${count} draws/state`, 13, h - 14, '#8fa9ba', font(10));
+    text(ctx, `N=${fmtShots(state.N)} · M=${fmtShots(state.M)} · ${count} draws/state`, 13, h - 14, '#8fa9ba', font(10));
   }
 
   /* ================================================================
@@ -1403,20 +1443,20 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
   /** Slider readouts; aria-valuetext makes the index-based sliders announce real values. */
   function updateControlLabels() {
     const labels = {
-      shots: fmtN(state.N),
+      shots: 'N = ' + (state.N === Infinity ? '∞ (exact)' : fmtN(state.N)),
       testShots: 'M = ' + (state.M === Infinity ? '∞ (exact)' : fmtN(state.M)),
       gamma: 'γ = ' + state.gamma.toFixed(2),
       ridge: 'λ = ' + fmtRidge(state.lambda),
       trainingCount: 'K = ' + state.K,
       outcomes: 'A = ' + state.A
     };
-    for (const [id, s] of Object.entries(labels)) { setText(id + 'Value', s); $(id).setAttribute('aria-valuetext', id === 'shots' ? 'N = ' + s : s); }
+    for (const [id, s] of Object.entries(labels)) { setText(id + 'Value', s); $(id).setAttribute('aria-valuetext', s); }
     setPressed('.training-mode-btn', b => b.dataset.trainMode === state.trainingMode);
     setPressed('.sampler-btn', b => b.dataset.sampler === state.samplingMode);
     setText('samplingStatus', state.samplingMode === 'gaussian' ? 'Covariance-matched Gaussian sampling' : 'Exact multinomial sampling');
     setText('samplerHint', state.samplingMode === 'gaussian'
       ? `Fast mode: draw a correlated Gaussian in the ${state.A - 1}-dimensional sum-to-one hyperplane, matching the exact multinomial covariance. Negative frequencies can occur at low shots (no clipping). Labels stay Gaussian.`
-      : `Exact independent ${state.A}-outcome multinomial draws for ${state.K} training states and the test state. Label noise stays Gaussian. With M = ∞, test frequencies are exact.`);
+      : `Exact independent ${state.A}-outcome multinomial draws for ${state.K} training states and the test state. Label noise stays Gaussian. With N = ∞ or M = ∞, the corresponding frequencies are exact.`);
   }
   /** Text that depends on A, K, geometry or seeds. */
   function updateModelText() {
@@ -1512,7 +1552,7 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
     newPovm() { state.povmSeed = (state.povmSeed + 7919) >>> 0; rebuildModel({povm: true}); requestCompute(true); },
     resampleNoise() { state.noiseSeed = (state.noiseSeed + 10007) >>> 0; requestCompute(true); },
     setN(N) { state.N = N; syncInput('shots', SHOTS.indexOf(N)); updateControlLabels(); requestCompute(true); },
-    setM(M) { state.M = M; syncInput('testShots', TEST_SHOTS.indexOf(M)); updateControlLabels(); requestCompute(false, true); },
+    setM(M) { state.M = M; syncInput('testShots', SHOTS.indexOf(M)); updateControlLabels(); requestCompute(false, true); },
     setGamma(g) { state.gamma = g; syncInput('gamma', Math.round(g * 100)); updateControlLabels(); requestCompute(); },
     setLambda(l) { state.lambda = l; syncInput('ridge', RIDGES.indexOf(l)); updateControlLabels(); requestCompute(); },
     setRuns(B) { state.B = B; syncInput('runs', B); updateControlLabels(); requestCompute(true); },
@@ -1532,7 +1572,7 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
   onInput('outcomes', actions.setOutcomeCount);
   onInput('trainingCount', actions.setTrainingCount);
   onInput('shots', i => actions.setN(SHOTS[i]));
-  onInput('testShots', i => actions.setM(TEST_SHOTS[i]));
+  onInput('testShots', i => actions.setM(SHOTS[i]));
   onInput('gamma', v => actions.setGamma(v / 100));
   onInput('ridge', i => actions.setLambda(RIDGES[i]));
   onInput('runs', actions.setRuns, 'change');
@@ -1574,13 +1614,13 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
       ...outcomes.map(j => `test_frequency_outcome${j}`),
       ...states.flatMap(k => outcomes.map(j => `freq_state${k}_outcome${j}`))];
     const y = trainBloch.map(r => dot(obsN, r)), minIdx = Math.min(state.K, state.A) - 1;
-    const rows = results.map((r, i) => [i + 1, state.K, state.A, state.trainingMode, state.trainSeed, state.N, state.M === Infinity ? 'Infinity' : state.M, state.gamma, state.lambda, state.samplingMode, state.povmSeed, state.noiseSeed,
+    const rows = results.map((r, i) => [i + 1, state.K, state.A, state.trainingMode, state.trainSeed, state.N === Infinity ? 'Infinity' : state.N, state.M === Infinity ? 'Infinity' : state.M, state.gamma, state.lambda, state.samplingMode, state.povmSeed, state.noiseSeed,
       ...obsN, ...testBloch, summary.truth, r.pred, r.trainOnlyPred, r.testContribution, r.err, Math.sqrt(samples[i].raw[minIdx].eig), r.wnorm,
       ...r.w, ...trainBloch.flat(), ...y, ...r.noisyY, ...samples[i].labelZ, ...testSamples[i], ...samples[i].P.flat()]);
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
     const a = document.createElement('a');
-    a.href = url; a.download = `qubit_povm_A${state.A}_K${state.K}_${state.trainingMode}_N${state.N}_lambda${state.lambda}.csv`;
+    a.href = url; a.download = `qubit_povm_A${state.A}_K${state.K}_${state.trainingMode}_N${fmtShots(state.N).replace('∞', 'inf').replace(/,/g, '')}_lambda${state.lambda}.csv`;
     a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
@@ -1673,7 +1713,7 @@ const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitPr
     setTrainingMode: mode => { if (['z', 'sphere'].includes(mode) && mode !== state.trainingMode) actions.setTrainingMode(mode); },
     resampleTrainingStates: () => { if (state.trainingMode === 'sphere') actions.resampleTrainingStates(); },
     setN: N => { if (SHOTS.includes(N)) actions.setN(N); },
-    setM: M => { if (TEST_SHOTS.includes(M)) actions.setM(M); },
+    setM: M => { if (SHOTS.includes(M)) actions.setM(M); },
     setGamma: g => { if (g >= 0 && g <= 1) actions.setGamma(Math.round(g * 100) / 100); },
     setLambda: l => { if (RIDGES.includes(l)) actions.setLambda(l); },
     setRuns: B => { if (RUN_OPTIONS.includes(B)) actions.setRuns(B); }
