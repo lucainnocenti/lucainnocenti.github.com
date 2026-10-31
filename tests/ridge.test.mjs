@@ -6,7 +6,7 @@ import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 const library = await import(pathToFileURL(process.env.QELM_LIBRARY));
 const {Random,randomIsometry,randomPureState,frameProbabilities,ridgeSpectralFactor,fitReadout}=library;
-const html=await readFile(new URL('../visualizations/qelm-shot-noise.html',import.meta.url),'utf8');
+const html=await readFile(new URL('../visualizations/qelm-triple-descent.html',import.meta.url),'utf8');
 const source=html.match(/<script id="workerSource" type="text\/plain">([\s\S]*?)<\/script>/)[1];
 const {solvePseudo,pureFeatures,frameFeatures,predictStats}=vm.runInNewContext(source+'\n({solvePseudo,pureFeatures,frameFeatures,predictStats})',{Random,randomIsometry,randomPureState,frameProbabilities,ridgeSpectralFactor});
 const near=(a,b,t=1e-8)=>assert.ok(Math.abs(a-b)<=t,`${a} != ${b}`);

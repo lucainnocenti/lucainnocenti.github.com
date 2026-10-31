@@ -1,0 +1,1684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>QELM qubit prediction visualization</title>
+<style>
+:root{--bg:#07101c;--line:#26394b;--muted:#8fa4b5;--text:#edf4fb;--cyan:#6bdbe5;--gold:#f1bc76;--white:#f8faff;--rule:#253548;--mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+*{box-sizing:border-box}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{background:radial-gradient(ellipse 900px 590px at 16% -18%,#173047 0%,transparent 68%),radial-gradient(ellipse 750px 450px at 90% -10%,#18203b 0%,transparent 70%),var(--bg);color:var(--text);margin:0;font:14px/1.48 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.mono{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.muted{color:var(--muted)}
+
+/* Page header: one compact band */
+.shell{max-width:1810px;margin:auto;padding:14px 18px 36px}
+.header{display:flex;gap:22px;align-items:center;justify-content:space-between;margin-bottom:10px}
+h1{font-size:22px;line-height:1.15;letter-spacing:-.6px;font-weight:720;margin:0 0 3px}
+.h1-arrow{color:#7ea1b4}
+.header p{margin:0;color:#a9bccb;font-size:12px;line-height:1.4}
+.header-meta{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:10.5px;color:var(--muted)}
+.status{display:flex;align-items:center;gap:7px;border:1px solid #2d554f;border-radius:20px;padding:3px 10px;background:#102922;color:#9fe3c8;font-size:10.5px;font-weight:740;white-space:nowrap}
+.status i{width:6px;height:6px;border-radius:50%;background:#8be3b4;box-shadow:0 0 8px #60d4a6}
+
+/* Cards and form controls */
+.panel,.control-deck,.theory{background:linear-gradient(155deg,rgba(21,36,54,.95),rgba(12,24,39,.99));border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 38px #00000015}
+.control-deck{margin-bottom:10px;overflow:hidden}
+.control-label{display:flex;justify-content:space-between;align-items:center;gap:13px;font-size:11px;color:#b4c9d8;font-weight:700;letter-spacing:.5px;margin-bottom:9px;text-transform:uppercase}
+.control-label strong{font-weight:800;color:var(--white);font-size:15px;letter-spacing:0;text-transform:none}
+input[type=range]{accent-color:var(--cyan);width:100%;height:18px;cursor:pointer;margin:0}
+input[type=checkbox]{accent-color:var(--cyan);width:14px;height:14px;vertical-align:middle}
+.range-extremes{display:flex;justify-content:space-between;color:#738da2;font-size:10px;margin-top:0}
+select{border:1px solid #30485c;background:#102335;color:var(--text);padding:9px 9px;border-radius:9px;outline:0;width:100%}
+.btn{padding:10px 13px;border:1px solid #375069;background:#193047;color:#d9ecf7;border-radius:9px;font-size:12px;font-weight:700;white-space:nowrap;transition:.15s background,.15s border-color}
+.btn:hover,.btn:focus-visible{background:#244761;border-color:#6095ad}
+.btn.accent{background:#164c54;border-color:#267c84;color:#d3ffff}
+.btn.accent:hover{background:#1b6570}
+.btn.small{padding:6px 11px;font-size:11px}
+.btn.active{background:#235866;border-color:#6bdbe5;color:white}
+.btn:disabled{opacity:.40;cursor:not-allowed;background:#162b3d;border-color:#294052}
+
+/* Control deck: sliders, settings and actions, observable and test state */
+.slider-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 18px;padding:9px 16px 10px;border-bottom:1px solid var(--rule);background:rgba(9,30,47,.28)}
+.slot,.control-mini{min-width:0}
+.control-deck .control-label{font-size:10px;margin-bottom:3px;gap:6px;white-space:nowrap}
+.control-deck .control-label strong{font-size:12px;flex:0 0 auto}
+.settings-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;padding:7px 16px;border-bottom:1px solid var(--rule);background:rgba(6,17,29,.27)}
+.setting{display:flex;align-items:center;gap:8px}
+.setting-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#b4c9d8;white-space:nowrap}
+.setting select{width:auto;min-height:28px;padding:4px 8px;font-size:12px}
+.segmented{display:flex;gap:4px}
+.segmented .btn,.actions .btn{padding:5px 10px;font-size:10.5px}
+.actions{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
+.state-row{display:grid;grid-template-columns:1fr 1fr}
+.state-box{padding:7px 16px 9px;min-width:0}
+.state-box+.state-box{border-left:1px solid var(--rule)}
+.state-head{display:flex;align-items:center;gap:12px;margin-bottom:4px;min-width:0}
+.state-head b{font-size:12px;white-space:nowrap}
+.state-head .math-static{font-weight:500;color:#9db5c6}
+.state-summary{flex:1 1 auto;min-width:0;display:flex;gap:12px;justify-content:flex-start;font-size:10px;color:#b2c4d5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.state-summary strong{color:var(--cyan);font-weight:700}
+.preset-group{display:flex;gap:4px;flex:0 0 auto}
+.preset-group .btn.small{padding:3px 8px;font-size:10px}
+.state-sliders{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.state-sliders.three{grid-template-columns:1fr 1fr 1fr}
+.control-mini .control-label{margin-bottom:0}
+.control-mini .control-label strong{font-size:11px}
+
+/* Dashboard: three plot panels and a column with the two diagnostics plots */
+.dashboard{display:grid;grid-template-columns:1fr 1.06fr 1.04fr .98fr;gap:12px;align-items:stretch}
+.panel{min-width:0;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px 0}
+.panel-title{font-weight:750;letter-spacing:-.2px;font-size:13.5px;margin:0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel-index{font:700 10px ui-monospace,Consolas,monospace;color:var(--cyan);margin-right:7px;letter-spacing:.5px}
+.panel-desc{color:#89a5b7;font-size:10.5px;margin:1px 12px 0;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel-head select{width:auto;padding:3px 6px;font-size:10.5px;border-radius:7px}
+.plot-chip{white-space:nowrap;color:#91b0c3;background:#0d2435;border:1px solid #294052;border-radius:7px;padding:3px 6px;font-size:9.5px;flex:0 0 auto}
+canvas.main-canvas{width:100%;height:clamp(220px,calc(100vh - 478px),500px);flex:1 0 auto;display:block;touch-action:none;cursor:grab}
+canvas.main-canvas.dragging{cursor:grabbing}
+canvas.main-canvas:focus-visible,.plot-box canvas:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+#histCanvas,#mseCanvas{cursor:crosshair}
+.plot-options{display:flex;gap:4px 11px;flex-wrap:wrap;align-items:center;padding:4px 12px 6px;font-size:10.5px;color:#a3b9ca}
+.plot-options label,.legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+.legend-item{cursor:default}
+.plot-options input{margin:0}
+.sw{display:inline-block;flex:0 0 auto}
+.sw-dot{width:8px;height:8px;border-radius:50%;background:var(--cyan)}
+.sw-dot+.sw-dot{margin-left:-2px}
+.sw-ring{width:9px;height:9px;border-radius:50%;background:#0b1828;border:1.5px solid #fff}
+.sw-diamond{width:7px;height:7px;background:#f8faff;transform:rotate(45deg);margin:0 1px}
+.sw-line{width:14px;border-top:2px solid var(--cyan)}
+.sw-dash{border-top-style:dashed}
+.axis-buttons{display:flex;gap:4px;flex:0 0 auto}
+.axis-buttons .btn{padding:3px 8px;font-size:10px}
+.axis-buttons .btn:disabled{opacity:.42;cursor:default}
+.panel-details{margin:auto 0 0;border-top:1px solid #223749;padding:5px 12px 6px}
+.panel-details summary{font-size:10.5px;color:#a2c3d5}
+.panel-details[open] summary{margin-bottom:6px}
+.summary-math,.summary-note{color:#7796aa;font-size:10px;margin-left:4px}
+.table-foot{color:#6f90a6;font-size:10px;margin-top:6px}
+.mse-cards{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:2px 12px 8px}
+.stat{background:#102437;border:1px solid #263c4f;border-radius:9px;padding:6px 10px;min-width:0}
+.stat-label{text-transform:uppercase;color:#8aa3b8;font-size:9.5px;letter-spacing:.6px;font-weight:750}
+.stat-value{color:#eaf6ff;font:700 clamp(14px,1.25vw,19px) ui-monospace,Consolas,monospace;margin-top:1px;white-space:nowrap}
+.stat-value.cyan{color:var(--cyan)}
+.stat-note{color:#7f9bae;font-size:9.5px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-list{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:10.5px}
+.stat-list dt{color:#8aa3b8}
+.stat-list dd{margin:0;color:#dcecf7;text-align:right}
+.hist-notes{margin:7px 0 0;color:#8da7b8;font-size:10.5px;line-height:1.45}
+.hist-axis-label{margin:4px 0 0;color:#92aabc;font:10px/1.4 ui-monospace,Consolas,monospace}
+.hist-axis-label.locked{color:#b7ddf0}
+.diagnostics{display:flex;flex-direction:column;gap:12px;min-width:0}
+.diagnostics .panel{flex:1 1 0;min-height:0}
+.plot-box{position:relative;flex:1 1 0;min-height:110px;margin-top:2px}
+.plot-box canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.plot-inline-legend{display:flex;align-items:center;gap:3px 10px;flex-wrap:wrap;padding:2px 12px 3px;color:#a3bbcc;font-size:10px}
+.plot-inline-legend span{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.readout{font:10.5px/1.45 ui-monospace,Consolas,monospace;color:#bcd0de;margin:0 12px;padding:4px 0 7px;border-top:1px solid #25384b}
+
+/* Notes below the dashboard */
+.explainer{margin-top:14px;padding:13px 17px 15px;font-size:12px;color:#b4c6d3;line-height:1.6}
+.explainer-head{font-size:13px;margin:0}
+.explainer-head+.setup-notes{margin-bottom:12px}
+.setup-notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding-top:6px;color:#a3bcce;font-size:11.5px;line-height:1.55}
+.explainer-columns{columns:3 300px;column-gap:26px}
+.explainer p{margin:8px 0 0;break-inside:avoid}
+.explainer strong{color:#e6f1fa}
+
+/* Tables (inside collapsible panel details) */
+.data-scroll{overflow-x:auto;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#33536a transparent}
+.data-table{width:max-content;min-width:100%;border-collapse:collapse;font:11px/1.45 ui-monospace,Consolas,monospace;text-align:right;font-variant-numeric:tabular-nums}
+.data-table th{color:#839fb1;font-weight:700;font-size:10px;padding:5px 7px;border-bottom:1px solid #2b4356;position:sticky;top:0;z-index:1;background:#102035}
+.data-table td{padding:6px 7px;color:#c7dae7;border-bottom:1px solid #20384b}
+.data-table td:first-child,.data-table th:first-child{text-align:left;white-space:nowrap}
+.state-chip{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.table-foot{color:#6f90a6;font-size:10px;margin-top:7px}
+
+/* Theory cards (MathJax SVG output) */
+.theory{margin-top:14px;padding:17px 19px 15px}
+.theory-head{font-size:13px;font-weight:760;margin-bottom:11px}
+.formula-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.formula{border:1px solid #274053;background:#0a1b2c;padding:15px 16px;border-radius:10px;min-width:0}
+.formula .formula-label{text-transform:uppercase;color:#7f9fb2;font-size:10px;font-weight:800;letter-spacing:.6px;margin-bottom:8px}
+.formula .mathline{font:12px/1.65 Inter,ui-sans-serif,system-ui,sans-serif;color:#e1eff9;padding:3px 0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#456278 transparent}
+.formula .mathline mjx-container{max-width:none}
+.theory-foot{margin-top:13px;color:#9eb2c2;font-size:11px}
+.theory-foot p{margin:8px 0;line-height:1.7}
+.theory-foot mjx-container{color:#d8ebf5}
+details{margin-top:13px}
+summary{color:#a2c3d5;cursor:pointer;font-size:11px;user-select:none}
+.povm-info{display:flex;gap:13px;flex-wrap:wrap;padding-top:10px}
+.povm-effect{flex:1 1 205px;max-width:320px;overflow-x:auto;padding:8px 10px;background:#0d2436;border:1px solid #2d475b;border-radius:9px;font:11px/1.6 ui-monospace,Consolas,monospace;color:#b5cbd7}
+.povm-effect mjx-container{color:#d6e9f6}
+.math-static mjx-container{font-size:94%!important}
+.panel mjx-container{color:inherit}
+/* Formulas: MathJax SVG when online (.tex-mj), built-in HTML rendering otherwise */
+.tex{white-space:nowrap}
+.tex:not(.tex-mj){font-family:"STIX Two Math","Cambria Math","Latin Modern Math","Times New Roman",Times,serif;font-size:1.16em;line-height:1}
+.tex-display{display:block;text-align:center;margin:.4em 0}
+.tex b{font-weight:700}
+.tex sub,.tex sup{font-size:.72em;line-height:0}
+.tex sub{vertical-align:-.28em}
+.tex sup{vertical-align:.5em;margin-left:.06em}
+.m-ss{display:inline-flex;flex-direction:column;vertical-align:.42em;line-height:1}
+.m-ss>span{font-size:.72em;line-height:1}
+.m-frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.84em;line-height:1.15;margin:0 .12em}
+.m-frac>span{padding:0 .15em}
+.m-frac>span+span{border-top:.07em solid currentColor}
+.m-rel{margin:0 .28em}
+.m-bin{margin:0 .2em}
+.m-punct{margin-right:.17em}
+.m-sf{font-family:ui-sans-serif,system-ui,sans-serif;font-size:.9em}
+.m-text{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:.9em}
+.m-big{font-size:1.25em;line-height:0;vertical-align:-.06em}
+.m-delim{font-size:1.75em;line-height:0;vertical-align:-.18em;font-weight:300}
+.m-over{position:relative;display:inline-block}
+.m-over-top{position:absolute;left:50%;bottom:72%;transform:translateX(-50%);font-size:.55em;line-height:1;white-space:nowrap}
+.m-acc{position:relative;display:inline-block;padding-top:.2em;line-height:1}
+.m-acc.m-tall{padding-top:.32em}
+.m-acc::after{position:absolute;left:50%;pointer-events:none}
+.m-acc.m-slant::after{left:calc(50% + .09em)}
+.m-hat::after,.m-widehat::after{content:"";width:.28em;height:.28em;border-left:.07em solid;border-top:.07em solid;bottom:.5em;transform:translateX(-50%) scaleY(.62) rotate(45deg)}
+.m-tall.m-hat::after,.m-tall.m-widehat::after{bottom:.74em}
+.m-bar::after,.m-overline::after{content:"";width:.5em;border-top:.065em solid;bottom:.68em;transform:translateX(-50%)}
+.m-tall.m-bar::after,.m-tall.m-overline::after{bottom:.9em}
+.m-tilde::after,.m-widetilde::after,.m-vec::after,.m-dot::after{font-size:.8em;line-height:1;bottom:.5em;transform:translateX(-50%)}
+.m-tilde::after,.m-widetilde::after{content:"˜"}
+.m-vec::after{content:"→";font-size:.6em;bottom:.95em}
+.m-dot::after{content:"˙"}
+.m-sqrt{border-top:.07em solid currentColor;padding:0 .1em}
+.plot-tooltip{pointer-events:none;position:fixed;z-index:99;display:none;max-width:240px;background:#071a2bea;border:1px solid #62879b;color:#f3faff;border-radius:8px;padding:8px 10px;font:11px/1.7 ui-monospace,Consolas,monospace;box-shadow:0 10px 22px #0008}
+.footer{color:#658196;font-size:10px;text-align:right;margin-top:17px}
+.footer a{color:inherit}
+.load-error{position:sticky;top:0;z-index:50;padding:10px 16px;background:#5a1f24;color:#ffd9d9;font:13px/1.4 system-ui,sans-serif}
+
+/* Breakpoints, widest first so narrower rules win */
+@media(max-width:1180px){
+  /* Two columns: the prediction plots and diagnostics come first, next to the controls */
+  .dashboard{grid-template-columns:1fr 1fr}
+  .dashboard>.panel:nth-child(3){order:-2}
+  .diagnostics{order:-1}
+  .actions{margin-left:0}
+}
+@media(max-width:1000px){
+  .slider-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  .state-row{grid-template-columns:1fr}
+  .state-box+.state-box{border-left:0;border-top:1px solid var(--rule)}
+}
+@media(max-width:760px){
+  .shell{padding:12px 10px 28px}
+  .header{align-items:flex-start}
+  .header-meta{display:none}
+  .header p{display:none}
+  .dashboard,.formula-grid{grid-template-columns:1fr}
+  .slider-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 14px;padding:10px 12px}
+  .settings-row,.state-box{padding-left:12px;padding-right:12px}
+  .state-head{flex-wrap:wrap;gap:4px 10px}
+  .state-summary{order:3;flex-basis:100%;justify-content:flex-start}
+  .state-sliders.three{grid-template-columns:1fr 1fr}
+  .state-sliders.three>.control-mini:last-child{grid-column:span 2}
+  .setup-notes{grid-template-columns:1fr;gap:9px}
+  canvas.main-canvas{height:330px}
+  .diagnostics .panel{flex:none}
+  .plot-box{flex:none;height:190px}
+  .formula{padding:13px}
+}
+@media(max-width:460px){
+  .slider-row{gap:9px 10px}
+  .control-deck .control-label{font-size:9px}
+  .control-deck .control-label strong{font-size:11px}
+  .stat-note{white-space:normal}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="header">
+    <div class="header-text">
+      <h1>QELM qubit prediction: shot noise <span class="h1-arrow">→</span> prediction uncertainty</h1>
+      <p>Training states on the Z-axis or random on the Bloch sphere, a random rank-1 POVM, finite shots N and M, and label noise γ shape the distribution of ridge predictions.</p>
+    </div>
+    <div class="header-meta"><span class="status"><i></i> <span id="samplingStatus">Exact multinomial sampling</span></span><span class="mono" id="headerSeed">POVM seed 314159</span><span id="mathStatus">Calculations run locally</span></div>
+  </header>
+
+  <section class="control-deck" aria-label="Experiment controls">
+    <div class="slider-row" aria-label="Sampling, noise, sizes and regularization">
+      <div class="slot"><div class="control-label"><span>Training shots</span><strong class="mono" id="shotsValue">200</strong></div><input aria-label="Training measurement shots N per state" type="range" id="shots" min="0" max="14" step="1" value="7"></div>
+      <div class="slot"><div class="control-label"><span>Test shots</span><strong class="mono" id="testShotsValue">M = 200</strong></div><input aria-label="Test measurement shots M" type="range" id="testShots" min="0" max="15" step="1" value="7"></div>
+      <div class="slot"><div class="control-label"><span>Label noise</span><strong class="mono" id="gammaValue">&#x03B3; = 0.10</strong></div><input aria-label="Gaussian standard deviation gamma of training labels" type="range" id="gamma" min="0" max="100" step="1" value="10"></div>
+      <div class="slot"><div class="control-label"><span>Training states</span><strong class="mono" id="trainingCountValue">K = 5</strong></div><input type="range" id="trainingCount" min="2" max="30" step="1" value="5" aria-label="Number of training states K"></div>
+      <div class="slot"><div class="control-label"><span>POVM outcomes</span><strong class="mono" id="outcomesValue">A = 3</strong></div><input type="range" id="outcomes" min="2" max="20" step="1" value="3" aria-label="POVM outcome count"></div>
+      <div class="slot"><div class="control-label"><span>Ridge</span><strong class="mono" id="ridgeValue">&#x03BB; = 0</strong></div><input aria-label="Ridge regularization" type="range" id="ridge" min="0" max="17" step="1" value="0"></div>
+    </div>
+
+    <div class="settings-row" aria-label="Experiment settings and actions">
+      <label class="setting"><span class="setting-label">MC runs</span><select aria-label="Number of repeated measurement and training experiments" id="runs"><option>200</option><option>400</option><option value="700" selected>700</option><option>1200</option><option>2000</option></select></label>
+      <div class="setting"><span class="setting-label" id="geometryLabel">Geometry</span><div class="segmented" role="group" aria-labelledby="geometryLabel"><button type="button" class="btn small active training-mode-btn" data-train-mode="z" aria-pressed="true">Z-axis</button><button type="button" class="btn small training-mode-btn" data-train-mode="sphere" aria-pressed="false">Random sphere</button></div></div>
+      <div class="setting"><span class="setting-label" id="samplerLabel">Sampler</span><div class="segmented" role="group" aria-labelledby="samplerLabel"><button type="button" class="btn small active sampler-btn" data-sampler="multinomial" aria-pressed="true">Multinomial</button><button type="button" class="btn small sampler-btn" data-sampler="gaussian" aria-pressed="false">Gaussian · fast</button></div></div>
+      <div class="actions"><button type="button" class="btn small accent" id="resample">Resample noise</button><button type="button" class="btn small" id="newPovm">New POVM</button><button type="button" class="btn small" id="resampleStates" title="Draw another set of random pure training states while keeping the POVM fixed" disabled>New states</button><button type="button" class="btn small" id="exportCsv" title="Export one row per Monte Carlo experiment">Export CSV</button></div>
+    </div>
+
+    <div class="state-row">
+      <div class="state-box">
+        <div class="state-head"><b>Target observable <span class="math-static">\(O=\mathbf n\cdot\boldsymbol{\sigma}\)</span></b><span class="state-summary mono"><span id="obsVector">n = (0, 0, 1)</span><span id="trainingLabel">yₖ = αₖ</span></span>
+          <div class="preset-group"><button type="button" class="btn small active observable-preset" data-obs="Z" aria-pressed="true">Z</button><button type="button" class="btn small observable-preset" data-obs="X" aria-pressed="false">X</button><button type="button" class="btn small observable-preset" data-obs="Y" aria-pressed="false">Y</button><button type="button" class="btn small observable-preset" data-obs="T" aria-pressed="false">Tilted</button></div></div>
+        <div class="state-sliders">
+          <div class="control-mini"><div class="control-label"><span>Polar angle θ</span><strong class="mono" id="obsThetaValue">0°</strong></div><input type="range" aria-label="Observable polar angle" id="obsTheta" min="0" max="180" step="1" value="0"></div>
+          <div class="control-mini"><div class="control-label"><span>Azimuth φ</span><strong class="mono" id="obsPhiValue">0°</strong></div><input type="range" aria-label="Observable azimuth angle" id="obsPhi" min="0" max="360" step="1" value="0"></div>
+        </div>
+      </div>
+      <div class="state-box">
+        <div class="state-head"><b>Unseen test state <span class="math-static">\(\sigma=\tfrac12(I+\mathbf r\cdot\boldsymbol{\sigma})\)</span></b><span class="state-summary mono"><span id="testVector">r = (0, 0, +0.35)</span><span>true <strong id="trueValue">⟨O⟩ = +0.3500</strong></span></span>
+          <div class="preset-group"><button type="button" class="btn small active test-preset" data-test="online" aria-pressed="true">On Z-line</button><button type="button" class="btn small test-preset" data-test="offaxis" aria-pressed="false">Off-axis</button></div></div>
+        <div class="state-sliders three">
+          <div class="control-mini"><div class="control-label"><span>Z coordinate</span><strong class="mono" id="testZValue">+0.35</strong></div><input type="range" aria-label="Test Bloch z coordinate" id="testZ" min="-100" max="100" step="1" value="35"></div>
+          <div class="control-mini"><div class="control-label"><span>Transverse</span><strong class="mono" id="testPerpValue">0.00</strong></div><input type="range" aria-label="Transverse fraction of available Bloch radius" id="testPerp" min="0" max="100" step="1" value="0"></div>
+          <div class="control-mini"><div class="control-label"><span>Azimuth φ</span><strong class="mono" id="testPhiValue">45°</strong></div><input type="range" aria-label="Test state azimuth" id="testPhi" min="0" max="360" step="1" value="45"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard" aria-label="Linked visualizations">
+    <article class="panel">
+      <div class="panel-head"><h2 class="panel-title"><span class="panel-index">01</span>Bloch sphere</h2><span class="plot-chip" title="Drag or use arrow keys to rotate · wheel or +/− to zoom · double-click or 0 to reset">drag to rotate</span></div>
+      <p class="panel-desc" id="blochDescription">Five equally spaced Z-axis states, from |0⟩ to |1⟩</p>
+      <canvas id="blochCanvas" class="main-canvas" tabindex="0" role="img" aria-label="Rotatable 3D Bloch sphere with configurable training points and one test point. Arrow keys rotate, plus and minus zoom, 0 resets the view."></canvas>
+      <div class="plot-options"><label><input id="showTrain" type="checkbox" checked><i class="sw sw-dot" style="background:#f68b79"></i>Training states</label><label><input id="showTest" type="checkbox" checked><i class="sw sw-diamond"></i>Test &#x03C3;</label><label><input id="showObservable" type="checkbox" checked><i class="sw sw-line" style="border-color:#f1bc76"></i>Observable O</label><label title="Trace-weighted Bloch arrows of the POVM effects"><input id="showPovm" type="checkbox"><i class="sw sw-line" style="border-color:#dc94c8"></i>POVM effects &#x03BC;</label></div>
+      <details class="panel-details"><summary><span id="exactPTitle">Exact 5 × 3 Born probability matrix</span> <span class="summary-math">\(P_{ka}=\operatorname{Tr}(\mu_a\rho_k)\)</span></summary>
+        <div class="data-scroll"><table class="data-table"><thead><tr id="exactPHeadRow"><th id="exactRowHeader">αₖ</th><th>p₁</th><th>p₂</th><th>p₃</th></tr></thead><tbody id="exactPTable"></tbody></table></div>
+        <div class="table-foot">Rows are exactly normalized; every set of counts is sampled independently.</div></details>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head"><h2 class="panel-title"><span class="panel-index">02</span><span id="simplexTitle">Probability simplex · first three outcomes</span></h2><span class="plot-chip" title="Drag or use arrow keys to rotate · wheel or +/− to zoom · double-click or 0 to reset">drag to rotate</span></div>
+      <p class="panel-desc" id="simplexDescription">The simplex, sampling clouds and 95% covariance contours</p>
+      <canvas id="simplexCanvas" class="main-canvas" tabindex="0" role="img" aria-label="Rotatable projection onto the first three POVM probabilities, with multinomial or Gaussian clouds and covariance contours. Arrow keys rotate, plus and minus zoom, 0 resets the view."></canvas>
+      <div class="plot-options"><label title="Training clouds (N shots) and test cloud (M shots)"><input id="showCloud" type="checkbox" checked><i class="sw sw-dot" style="background:#a5e3ef"></i><i class="sw sw-dot" style="background:#f1c37e"></i>Sample clouds</label><label><input id="showEllipse" type="checkbox" checked><i class="sw sw-line sw-dash" style="border-color:#a5e3ef"></i>95% contours</label><label><input id="showPca" type="checkbox" checked><i class="sw sw-line" style="border-color:#67e1e9"></i>Centered SVD axes</label><span class="legend-item"><i class="sw sw-ring"></i>Exact p&#x2096;</span><span class="legend-item"><i class="sw sw-diamond"></i>Test p(&#x03C3;)</span></div>
+      <details class="panel-details"><summary>Local shot-noise spread <span class="summary-note">first three coordinates, 1σ</span></summary>
+        <div class="data-scroll"><table class="data-table"><thead><tr><th id="covRowHeader">αₖ</th><th>s₁ (1σ)</th><th>s₂ (1σ)</th><th>s₃ (1σ)</th></tr></thead><tbody id="covTable"></tbody></table></div>
+        <div class="table-foot">95% projected Gaussian contours: line (A=2), ellipse (A=3), or ellipsoid wireframe (A≥4). Gaussian draws can leave the physical region at low shots.</div></details>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head"><h2 class="panel-title"><span class="panel-index">03</span>Predictions</h2><span class="axis-buttons"><button type="button" class="btn small" id="lockHistAxes" aria-pressed="false" title="Freeze the present x- and y-axis limits when changing experimental parameters">Lock axes</button><button type="button" class="btn small" id="refitHistAxes" disabled title="While axes are locked, replace the fixed limits by the current autoscaled ones">Refit</button></span></div>
+      <p class="panel-desc"><span id="histTag">700 runs</span> of noisy features and labels &#x2192; ridge fit &#x2192; M-shot test prediction</p>
+      <canvas id="histCanvas" class="main-canvas" role="img" aria-label="Histogram of Monte Carlo predicted expectation values with true value and Gaussian comparison"></canvas>
+      <div class="plot-options"><span class="legend-item"><i class="sw sw-line sw-dash" style="border-color:#fff"></i>True \(\langle O\rangle_{\sigma}\)</span><span class="legend-item"><i class="sw sw-line"></i>MC mean</span><span class="legend-item"><i class="sw sw-line" style="border-color:#f1bc76"></i>Gaussian fit</span></div>
+      <div class="mse-cards">
+        <div class="stat"><div class="stat-label">Training MSE</div><div class="stat-value" id="statTrainMse">—</div><div class="stat-note">fit to the noisy labels</div></div>
+        <div class="stat"><div class="stat-label">Test MSE</div><div class="stat-value cyan" id="statTestMse">—</div><div class="stat-note">vs exact ⟨O⟩ at this λ</div></div>
+      </div>
+      <details class="panel-details"><summary>More statistics</summary>
+        <dl class="stat-list">
+          <dt>Prediction mean</dt><dd class="mono" id="statMean">—</dd>
+          <dt>Standard deviation</dt><dd class="mono" id="statSd">—</dd>
+          <dt>Bias (mean − truth)</dt><dd class="mono" id="statBias">—</dd>
+          <dt>95% MC range</dt><dd class="mono" id="statRange">—</dd>
+          <dt>Training + label SD</dt><dd class="mono" id="statTrainSd">—</dd>
+          <dt>Test shot SD (expected)</dt><dd class="mono" id="statTestSd">—</dd>
+        </dl>
+        <p class="hist-notes" id="histNotes">Training and test measurement noise plus Gaussian training-label errors (&#x03B3;) affect the prediction. The reference truth is exact.</p>
+        <p class="hist-axis-label" id="histAxisLabel" aria-live="polite">Autoscaled x and y</p>
+      </details>
+    </article>
+
+    <div class="diagnostics">
+      <article class="panel">
+        <div class="panel-head"><h2 class="panel-title"><span class="panel-index">04</span>Singular values</h2><select id="spectrumScale" aria-label="Singular-value plot scale"><option value="log" selected>Log y</option><option value="linear">Linear y</option></select></div>
+        <div class="plot-box"><canvas id="specCanvas" role="img" aria-label="Line plot of both centered and uncentered singular values, with exact references"></canvas></div>
+        <div class="plot-inline-legend"><span><i class="sw sw-line" style="border-color:#78c4f3"></i>Raw</span><span><i class="sw sw-line" style="border-color:#d0a7ff"></i>Centered</span><span><i class="sw sw-line sw-dash" style="border-color:#9fb6c8"></i>Exact</span><span>× exact zero</span></div>
+        <div class="readout" id="specReadout">—</div>
+      </article>
+      <article class="panel">
+        <div class="panel-head"><h2 class="panel-title"><span class="panel-index">05</span>Test MSE vs. ridge \(\lambda\)</h2><select id="mseScale" aria-label="MSE vertical scale"><option value="linear" selected>Linear y</option><option value="log">Log y</option></select></div>
+        <div class="plot-box"><canvas id="mseCanvas" role="img" aria-label="Mean squared prediction error against ridge regularization, with current and optimal sampled ridge marked"></canvas></div>
+        <div class="plot-inline-legend"><span><i class="sw sw-line" style="border-color:#6bdbe5"></i>MSE</span><span><i class="sw sw-line sw-dash" style="border-color:#f1bc76"></i>Bias²</span><span><i class="sw sw-line" style="border-color:#bd9aff"></i>Variance</span><span class="muted">click to set λ</span></div>
+        <div class="readout" id="mseReadout">—</div>
+      </article>
+    </div>
+  </section>
+
+  <section class="panel explainer"><h2 class="explainer-head">Current setup</h2><div class="setup-notes"><div id="outcomeHint">Random rank-1 POVM. The full A-outcome features enter regression; only the first three probabilities appear in the 3D view.</div>
+      <div id="trainingModeHint">Z-axis: K equally spaced Bloch vectors from +Z to −Z, including mixed states. Switch to the sphere for uniformly random pure states.</div>
+      <div id="samplerHint">Exact independent multinomial draws for 5 training states and the test state. Label noise stays Gaussian. With M = &#x221E;, test frequencies are exact.</div></div>
+    <h2 class="explainer-head">How to interpret the geometry</h2><div class="explainer-columns"><p><strong>Projected covariance contours</strong> reflect the first three measured probabilities. Their characteristic widths scale as \(N^{-1/2}\) (test: \(M^{-1/2}\)). When \(A>3\) the first three coordinates need not sum to one: the permitted projected region is a tetrahedron, not a triangle.</p><p><strong>Singular-value curves</strong> compare full \(A\)-dimensional noisy and exact feature matrices, with/without centering across the \(K\) training states. Centering removes the constant-probability direction.</p><p><strong>Spectral conditioning.</strong> <span id="spectralInterpretation">Z-axis training generates at most two exact feature directions. Generic sphere training and \(A\ge 4\) can support four affine directions.</span></p><p><strong>Regularization risk.</strong> The MSE curve recomputes the prediction for every listed λ using the <em>same</em> training/test sampling and noisy labels, and compares each prediction with the exact test expectation. \(\operatorname{MSE}=\operatorname{Bias}^2+\operatorname{Var}\).</p><p><strong>Informational completeness.</strong> Two or three outcomes cannot determine all Bloch components. Generic rank-1 POVMs with \(A\ge 4\) outcomes can be informationally complete, but training restricted to the Z-axis still cannot identify responses to arbitrary off-axis states.</p></div></section>
+
+  <section class="theory"><div class="theory-head">Model and estimator</div>
+    <div class="formula-grid">
+      <div class="formula"><div class="formula-label">States and rank-1 POVM</div>
+        <div class="mathline">\(\rho_k=\frac12\bigl(I+\mathbf r_k\cdot\boldsymbol\sigma\bigr)\)</div>
+        <div class="mathline">Z-axis: \(\mathbf r_k=\left(0,0,1-\frac{2(k-1)}{K-1}\right)\)</div>
+        <div class="mathline">Sphere: \(\|\mathbf r_k\|=1,\quad z\sim\mathcal U[-1,1],\quad\phi\sim\mathcal U[0,2\pi)\)</div>
+        <div class="mathline">\(\mu_a=\frac12\bigl(t_a I+\mathbf v_a\cdot\boldsymbol\sigma\bigr)\)</div>
+        <div class="mathline">\(\mathbf v_a=t_a\mathbf n_a,\qquad\|\mathbf n_a\|=1\)</div>
+      </div>
+      <div class="formula"><div class="formula-label">Two measurement-sampling models</div>
+        <div class="mathline">\(p_{ka}=\operatorname{Tr}(\mu_a\rho_k)\)</div>
+        <div class="mathline">Multinomial: \(\mathbf C_k\sim\operatorname{Multinomial}(N,\mathbf p_k)\)</div>
+        <div class="mathline">\(\hat{\mathbf p}_k=\mathbf C_k/N\)</div>
+        <div class="mathline">Gaussian: \(\hat{\mathbf p}_k\sim\mathcal N\!\left(\mathbf p_k,\,\frac{\operatorname{diag}(\mathbf p_k)-\mathbf p_k\mathbf p_k^{\mathsf T}}{N}\right)\)</div>
+        <div class="mathline">For the test state, replace \(N\) with \(M\).</div>
+      </div>
+      <div class="formula"><div class="formula-label">Noisy training labels and ridge fit</div>
+        <div class="mathline">\(\hat y_k=\operatorname{Tr}(O\rho_k)+\gamma\xi_k\)</div>
+        <div class="mathline">\(\xi_k\overset{\mathrm{iid}}{\sim}\mathcal N(0,1)\)</div>
+        <div class="mathline">\(\hat{\mathbf w}_\lambda=\bigl(\hat P^{\mathsf T}\hat P+\lambda I\bigr)^{+}\hat P^{\mathsf T}\hat{\mathbf y}\)</div>
+        <div class="mathline">\(\hat{\mathbf w}_\lambda\in\mathbb R^A\); \({}^{+}\) denotes Moore–Penrose inverse.</div>
+      </div>
+      <div class="formula"><div class="formula-label">Test prediction and exact target</div>
+        <div class="mathline">\(p_a(\sigma)=\operatorname{Tr}(\mu_a\sigma)\)</div>
+        <div class="mathline">\(\hat o_\lambda=\hat{\mathbf p}(\sigma)^{\mathsf T}\hat{\mathbf w}_\lambda\)</div>
+        <div class="mathline">\(o_{\mathrm{true}}=\operatorname{Tr}(O\sigma)\)</div>
+        <div class="mathline">\(M=\infty:\quad\hat{\mathbf p}(\sigma)=\mathbf p(\sigma)\)</div>
+        <div class="mathline">\(\operatorname{MSE}(\lambda)=\mathbb E[(\hat o_\lambda-o_{\mathrm{true}})^2]\)</div>
+      </div>
+    </div>
+    <div class="theory-foot">
+      <p>All \(A\) outcomes enter sampling, fitting and prediction; the 3D plot shows only \((p_1,p_2,p_3)\), without renormalization. When \(A=2\), the third coordinate is zero. Every Monte Carlo run has independent training and test measurements and \(K\) independent training-label perturbations of variance \(\gamma^2\). Test labels are never perturbed.</p>
+      <p>The Gaussian sampler matches the multinomial mean and covariance and preserves \(\sum_a\hat p_a=1\), but does not enforce \(\hat p_a\ge0\) at small shot counts. The conditional test-shot contribution is
+      \(\displaystyle\operatorname{Var}(\hat o\mid\hat{\mathbf w})=\frac{1}{M}\left[\sum_a p_a(\sigma)\hat w_a^2-\bigl(\mathbf p(\sigma)^{\mathsf T}\hat{\mathbf w}\bigr)^2\right].\)
+      With \(M=\infty\), test features are exact. Locked prediction axes retain the same limits as parameters vary; select <em>Refit lock</em> to rescale.</p>
+    </div>
+    <details><summary>Inspect the randomly generated rank-1 POVM (effects, weights and directions)</summary><div id="povmInfo" class="povm-info"></div></details>
+  </section>
+  <div class="footer">Numerics by <a href="https://github.com/lucainnocenti/qelm-js">qelm-js</a> (loaded from a CDN) · formulas use MathJax 3 from a CDN when online, built-in rendering offline · mouse, touch and keyboard rotation</div>
+</div>
+<div class="plot-tooltip" id="tooltip"></div>
+<script type="module">
+/* Numerical building blocks come from qelm-js (https://github.com/lucainnocenti/qelm-js),
+ * loaded as its single-file ES module bundle pinned to a fixed commit. Works from GitHub Pages
+ * and from a local file:// copy as long as the CDN is reachable. Without a connection, a copy of
+ * dist/qelm.js saved next to this page is used when the folder is served over http. */
+const QELM_CDN = 'https://cdn.jsdelivr.net/gh/lucainnocenti/qelm-js@f9dfeb9e027b523d38cd8705fc0f8adae1e72bc7/dist/qelm.js';
+async function loadQelm() {
+  try { return await import(QELM_CDN); }
+  catch (err) { if (location.protocol === 'file:') throw err; return import('./qelm.js'); }
+}
+let qelm;
+try { qelm = await loadQelm(); }
+catch (err) {
+  console.error(err);
+  const banner = Object.assign(document.createElement('div'), {className: 'load-error', role: 'alert',
+    textContent: 'Could not load the qelm-js library from cdn.jsdelivr.net. Check the internet connection, or save dist/qelm.js from the qelm-js repository next to this page and serve the folder over http (e.g. python3 -m http.server).'});
+  document.body.prepend(banner);
+  throw err;
+}
+const {Random, mixSeed, sampleFrequencies, randomIsometry, qubitEffects, qubitProbabilities,
+  svd, symmetricEigen, ridgeSpectralFactor, dot, quantile} = qelm;
+(function () {
+  /* ================================================================
+   * 1. Constants and small helpers
+   * ================================================================ */
+  const SHOTS = [2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 25000, 50000];
+  const TEST_SHOTS = [...SHOTS, Infinity];
+  const RIDGES = [0, 1e-7, 3e-7, 1e-6, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1, 3, 10];
+  const RUN_OPTIONS = [200, 400, 700, 1200, 2000];
+  const MAX_K = 30, MAX_A = 20;
+  const RIDGE_AXIS = {zeroAt: -8, max: 1};                         // log10 positions on the MSE x-axis
+  const CHI2_95 = {1: 3.841459, 2: 5.991464547, 3: 7.814727903};  // 95% quantiles by dimension
+  const MONO = 'ui-monospace,Consolas,monospace';
+  const font = (px, bold = false) => `${bold ? 'bold ' : ''}${px}px ${MONO}`;
+
+  const OBS_PRESETS = {Z: [0, 0], X: [90, 0], Y: [90, 90], T: [48, 25]};      // [theta, phi] in degrees
+  const TEST_PRESETS = {online: {testZ: .35, testPerp: 0, testPhi: 45}, offaxis: {testZ: .35, testPerp: .66, testPhi: 55}};
+  const CAMERA_HOME = {bloch: {az: .86, el: .29, zoom: 1}, simplex: {az: .77, el: .64, zoom: 1}};
+  const ZOOM_RANGE = [.7, 1.35];
+
+  const $ = id => document.getElementById(id);
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const norm = x => Math.sqrt(dot(x, x));
+  const rad = x => x * Math.PI / 180;
+  const mean = xs => xs.reduce((s, v) => s + v, 0) / xs.length;
+  const sampleSd = (xs, m) => Math.sqrt(xs.reduce((s, v) => s + (v - m) ** 2, 0) / Math.max(1, xs.length - 1));
+
+  /** Signed fixed-point; never prints "-0.00". */
+  function fmt(x, d = 3) {
+    if (!Number.isFinite(x)) return '—';
+    const s = x.toFixed(d);
+    if (/^-0\.?0*$/.test(s)) return '+' + s.slice(1);
+    return (x >= 0 ? '+' : '') + s;
+  }
+  const fmtN = x => x.toLocaleString('en-US');
+  const fmtSci = x => x === 0 ? '0' : Math.abs(x) >= 0.01 ? x.toFixed(4) : x.toExponential(2);
+  const fmtShots = n => n === Infinity ? '∞' : fmtN(n);
+  const fmtRidge = l => l === 0 ? '0' : l >= .01 ? String(l) : l.toExponential(0);
+  const ridgeLog = l => l === 0 ? RIDGE_AXIS.zeroAt : Math.log10(l);
+  function niceNum(x) {
+    if (!Number.isFinite(x)) return '—';
+    const a = Math.abs(x);
+    if (a < .0001 && x !== 0) return x.toExponential(1);
+    return x.toFixed(a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : a >= 1 ? 3 : 4);
+  }
+
+  /* Colors: fixed palettes extended deterministically by golden-angle hues. */
+  function hslHex(h, s, l) {
+    const a = s * Math.min(l, 1 - l);
+    const f = n => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))).toString(16).padStart(2, '0'); };
+    return '#' + f(0) + f(8) + f(4);
+  }
+  const TRAIN_COLORS = Array.from({length: MAX_K}, (_, i) => ['#f68b79', '#f2bc77', '#73d4ac', '#70baf4', '#c3a4fa'][i] || hslHex((19 + 137.508 * i) % 360, .73, .69));
+  const EFFECT_COLORS = Array.from({length: MAX_A}, (_, i) => ['#ef8ab3', '#83dfca', '#bba0f6'][i] || hslHex((250 + 137.508 * i) % 360, .66, .67));
+  const PCA_COLORS = ['#67e1e9', '#efa8f7', '#d4d98a'];
+  const trainingColor = i => TRAIN_COLORS[i];
+  const effectColor = i => EFFECT_COLORS[i];
+  const rgbaCache = new Map();
+  function rgba(hex, alpha) {
+    const key = hex + alpha;
+    let v = rgbaCache.get(key);
+    if (!v) { const n = parseInt(hex.slice(1), 16); v = `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`; rgbaCache.set(key, v); }
+    return v;
+  }
+
+  /* ================================================================
+   * 2. Application state
+   * ================================================================ */
+  const state = {
+    A: 3, K: 5, trainingMode: 'z', trainSeed: 1618033, N: 200, M: 200, gamma: 0.10, lambda: 0, B: 700,
+    povmSeed: 314159, noiseSeed: 271828, samplingMode: 'multinomial', histAxesLocked: false,
+    obsTheta: 0, obsPhi: 0, testZ: 0.35, testPerp: 0, testPhi: 45,
+    showCloud: true, showEllipse: true, showPca: true, showTrain: true, showTest: true, showObservable: true, showPovm: false,
+    spectrumScale: 'log', mseScale: 'linear'
+  };
+  const camera = {bloch: {...CAMERA_HOME.bloch}, simplex: {...CAMERA_HOME.simplex}};
+
+  // Model (rebuilt when A, K, geometry or seeds change).
+  let povm = [], trainBloch = [], exactP = [], exactEigen = {raw: [], centered: []}, trainSpread = [];
+  // Per-frame quantities (observable and test state).
+  let obsN = [0, 0, 1], testBloch = [0, 0, .35], testP = [], testContours = [];
+  // Monte Carlo realizations and their analysis.
+  let samples = [], representative = null, testSamples = [], results = [], mseCurve = [], summary = {}, exactResult = 0;
+  // Rendering bookkeeping.
+  let tooltipPoints = {bloch: [], simplex: []}, lockedHistogramAxes = null, lastHistogramAxes = null, msePlotRegion = null;
+
+  /* ================================================================
+   * 3. Numerics from the qelm-js library
+   *    Random streams, frequency sampling, Haar-random isometries, qubit effects,
+   *    Born probabilities, SVD and symmetric eigensolver all come from qelm-js.
+   *    What remains here is visualization-specific glue.
+   * ================================================================ */
+  /** Seeded stream; distinct integer coordinates give independent streams. */
+  const stream = (...coords) => new Random(mixSeed(...coords.map(c => c >>> 0)));
+  const SAMPLER = {validate: false};   // probabilities are produced by the model, already normalized
+  /** One sampler interface for both models (exact multinomial or covariance-matched Gaussian). */
+  const frequencySampler = (p, shots) => rng => Array.from(sampleFrequencies(p, shots, rng, {...SAMPLER, model: state.samplingMode}));
+
+  /** Flip a vector so its largest-magnitude entry is positive (stable arrow directions). */
+  function canonicalSign(v) {
+    let big = 0;
+    for (let i = 1; i < v.length; i++) if (Math.abs(v[i]) > Math.abs(v[big])) big = i;
+    if (v[big] < 0) for (let i = 0; i < v.length; i++) v[i] = -v[i];
+    return v;
+  }
+  /**
+   * Eigenpairs {eig, vec} of the (optionally column-centered) Gram matrix XᵀX of a K×A matrix X,
+   * from the thin SVD of X: eig = σ², vec = right singular vector. The SVD works on the smaller
+   * side automatically, so only min(K, A) pairs are returned. Also returns the column mean.
+   */
+  function gramEigen(P, centered) {
+    const K = P.length, A = P[0].length, mu = new Array(A).fill(0);
+    if (centered) for (const row of P) for (let j = 0; j < A; j++) mu[j] += row[j] / K;
+    const X = centered ? P.map(row => Array.from(row, (x, j) => x - mu[j])) : P;
+    const {values, v} = svd(X);
+    const tiny = (values[0] || 0) * 1e-7;   // σ below this is numerical noise (σ² below 1e-14·σ²_max)
+    const eig = Array.from(values, (s, i) => ({eig: s > tiny ? s * s : 0, vec: canonicalSign(Array.from(v[i]))}));
+    return {eig, mean: mu};
+  }
+  /** Truncated ridge solution w = Σ v (v·rhs) / (σ² + λ) from eigenpairs of PᵀP and rhs = Pᵀy. */
+  function ridgeWeights(eig, rhs, lambda) {
+    const w = new Array(rhs.length).fill(0), tol = (eig[0]?.eig || 0) * 1e-11;
+    for (const e of eig) {
+      if (e.eig <= tol) continue; // nullspace is excluded also for lambda > 0
+      const amp = dot(e.vec, rhs) * ridgeSpectralFactor(e.eig, lambda);
+      for (let j = 0; j < w.length; j++) w[j] += e.vec[j] * amp;
+    }
+    return w;
+  }
+  function rhsOf(P, y) {
+    const rhs = new Array(P[0].length).fill(0);
+    for (let k = 0; k < P.length; k++) for (let j = 0; j < rhs.length; j++) rhs[j] += P[k][j] * y[k];
+    return rhs;
+  }
+  const percentile = (values, t) => values.length ? quantile(values, clamp(t, 0, 1)) : 0;
+
+  /* ================================================================
+   * 4. Physical model: POVM, states, Born probabilities
+   * ================================================================ */
+  function samplePovm(seed, A) {
+    // Haar-random isometry U: C^2 -> C^A; row a gives the rank-1 effect, and Σ_a μ_a = U†U = I.
+    return qubitEffects(randomIsometry(A, 2, stream(seed)))
+      .map(effect => ({...effect, direction: effect.v.map(z => z / effect.t)}));
+  }
+  const bornProbabilities = r => qubitProbabilities(povm, r);
+  function buildTrainingStates() {
+    if (state.trainingMode === 'z') return Array.from({length: state.K}, (_, i) => [0, 0, 1 - 2 * i / (state.K - 1)]);
+    // Haar-uniform pure states (z ~ U[-1,1], phi ~ U[0,2pi)); a fixed seed keeps the first K stable as K grows.
+    const rng = stream(state.trainSeed);
+    return Array.from({length: state.K}, () => {
+      const z = 2 * rng.uniform() - 1, phi = 2 * Math.PI * rng.uniform(), perp = Math.sqrt(Math.max(0, 1 - z * z));
+      return [perp * Math.cos(phi), perp * Math.sin(phi), z];
+    });
+  }
+  const projected3 = p => [p[0] || 0, p[1] || 0, p[2] || 0];
+  /** Eigenpairs of the covariance of the first three frequency coordinates after `shots` draws. */
+  function localSpread(p, shots) {
+    const q = projected3(p);
+    const cov = q.map((x, i) => q.map((y, j) => ((i === j ? x : 0) - x * y) / shots));
+    const scale = Math.max(...q) / shots;
+    const eig = symmetricEigen(cov).map(e => ({eig: e.value > scale * 1e-13 ? e.value : 0, vec: e.vector}));
+    return {center: q, eig, sigma: eig.map(e => Math.sqrt(e.eig))};
+  }
+  /** 95% contour of the projected Gaussian: a segment, an ellipse, or three principal ellipses of an ellipsoid. */
+  function contourCurves({center: q, eig}) {
+    const rank = eig.filter(e => e.eig > Math.max(1e-22, eig[0].eig * 1e-9)).length;
+    if (!rank) return [];
+    const r = i => Math.sqrt(CHI2_95[rank] * eig[i].eig);
+    if (rank === 1) { const v = eig[0].vec, s = r(0); return [[q.map((x, j) => x - s * v[j]), q.map((x, j) => x + s * v[j])]]; }
+    const ellipse = (a, b) => Array.from({length: 71}, (_, k) => {
+      const t = 2 * Math.PI * k / 70, c = Math.cos(t), sn = Math.sin(t);
+      return q.map((x, j) => x + r(a) * c * eig[a].vec[j] + r(b) * sn * eig[b].vec[j]);
+    });
+    return rank === 2 ? [ellipse(0, 1)] : [ellipse(0, 1), ellipse(0, 2), ellipse(1, 2)];
+  }
+
+  /** Rebuild everything that depends on A, K, geometry or seeds (cheap; runs synchronously). */
+  function rebuildModel({povm: newPovm = false, training = false} = {}) {
+    if (newPovm) { povm = samplePovm(state.povmSeed, state.A); povmInfo.invalidate(); }
+    if (training) trainBloch = buildTrainingStates();
+    exactP = trainBloch.map(bornProbabilities);
+    exactEigen = {raw: gramEigen(exactP, false).eig, centered: gramEigen(exactP, true).eig};
+    updateModelText();
+  }
+
+  /* ================================================================
+   * 6. Monte Carlo experiment
+   * ================================================================ */
+  function createSamples() {
+    const rng = stream(state.noiseSeed, 1, state.N, state.povmSeed, state.K, state.A, state.trainingMode === 'sphere' ? state.trainSeed : 0);
+    const labelRng = stream(state.noiseSeed, 2, state.povmSeed);
+    const draw = exactP.map(row => frequencySampler(row, state.N));
+    samples = new Array(state.B);
+    for (let b = 0; b < state.B; b++) {
+      const P = draw.map(f => f(rng));
+      // Only the raw spectrum is needed per run; the centered one is computed once, for the plotted realization.
+      samples[b] = {P, raw: gramEigen(P, false).eig, labelZ: trainBloch.map(() => labelRng.normal())};
+    }
+    representative = samples[0];
+    const c = gramEigen(representative.P, true);
+    representative.centered = c.eig; representative.meanP = c.mean;
+    trainSpread = exactP.map(p => localSpread(p, state.N));
+    trainSpread.forEach(s => { s.contours = contourCurves(s); });
+  }
+  function createTestSamples() {
+    if (state.M === Infinity) { testSamples = Array.from({length: state.B}, () => testP.slice()); return; }
+    const rng = stream(state.noiseSeed, 3, state.M, state.povmSeed, state.A);
+    const draw = frequencySampler(testP, state.M);
+    testSamples = Array.from({length: state.B}, () => draw(rng));
+  }
+  function updateVectors() {
+    const th = rad(state.obsTheta), ph = rad(state.obsPhi);
+    obsN = [Math.sin(th) * Math.cos(ph), Math.sin(th) * Math.sin(ph), Math.cos(th)];
+    const t = state.testPerp * Math.sqrt(Math.max(0, 1 - state.testZ * state.testZ));
+    testBloch = [t * Math.cos(rad(state.testPhi)), t * Math.sin(rad(state.testPhi)), state.testZ];
+    testP = bornProbabilities(testBloch);
+    testContours = state.M === Infinity ? [] : contourCurves(localSpread(testP, state.M));
+  }
+  /**
+   * Fit every realization along the whole ridge path at once. In the eigenbasis of P^T P,
+   * prediction(lambda) = sum_i (v_i·rhs)(v_i·q)/(e_i + lambda), so each extra lambda costs O(rank).
+   */
+  function recomputeFits() {
+    const truth = dot(obsN, testBloch), y = trainBloch.map(r => dot(obsN, r));
+    exactResult = dot(testP, ridgeWeights(exactEigen.raw, rhsOf(exactP, y), state.lambda));
+    const nR = RIDGES.length, lambdaIdx = RIDGES.indexOf(state.lambda);
+    const sumPred = new Float64Array(nR), sumSqErr = new Float64Array(nR);
+    results = samples.map((s, i) => {
+      const noisyY = y.map((yk, k) => yk + state.gamma * s.labelZ[k]);
+      const rhs = rhsOf(s.P, noisyY), q = testSamples[i], tol = s.raw[0].eig * 1e-11;
+      const w = new Array(rhs.length).fill(0), eigs = [], coefs = [];
+      for (const e of s.raw) {
+        if (e.eig <= tol) continue;
+        const proj = dot(e.vec, rhs), amp = proj * ridgeSpectralFactor(e.eig, state.lambda);
+        eigs.push(e.eig); coefs.push(proj * dot(q, e.vec));
+        for (let j = 0; j < w.length; j++) w[j] += e.vec[j] * amp;
+      }
+      let pred = 0;
+      for (let j = 0; j < nR; j++) {
+        let prediction = 0;
+        for (let m = 0; m < eigs.length; m++) prediction += coefs[m] / (eigs[m] + RIDGES[j]);
+        sumPred[j] += prediction; sumSqErr[j] += (prediction - truth) ** 2;
+        if (j === lambdaIdx) pred = prediction;
+      }
+      const trainOnlyPred = dot(testP, w);
+      let trainSq = 0;   // in-sample residual against the noisy labels the model was fitted to
+      for (let k = 0; k < s.P.length; k++) { const r = dot(s.P[k], w) - noisyY[k]; trainSq += r * r; }
+      return {index: i, pred, trainOnlyPred, testContribution: pred - trainOnlyPred, noisyY, err: pred - truth, wnorm: norm(w), w, trainMse: trainSq / s.P.length};
+    });
+    mseCurve = RIDGES.map((lambda, j) => {
+      const m = sumPred[j] / results.length, mse = sumSqErr[j] / results.length, bias2 = (m - truth) ** 2;
+      return {lambda, mse, bias2, variance: Math.max(0, mse - bias2), mean: m};
+    });
+    const optimal = mseCurve.reduce((best, p) => p.mse < best.mse ? p : best, mseCurve[0]);
+    const current = mseCurve[lambdaIdx];
+    const vals = results.map(r => r.pred), sorted = vals.slice().sort((a, b) => a - b), m = current.mean;
+    const sd = sampleSd(vals, m);
+    const skew = sd > 1e-12 ? vals.reduce((s, v) => s + ((v - m) / sd) ** 3, 0) / vals.length : 0;
+    const trainPreds = results.map(r => r.trainOnlyPred), trainSd = sampleSd(trainPreds, mean(trainPreds));
+    // E[Var(o | w)] from test-shot noise: (sum_a p_a w_a^2 - (p·w)^2)/M, averaged over runs.
+    const expectedTestVar = state.M === Infinity ? 0 : mean(results.map(r =>
+      Math.max(0, testP.reduce((t, p, a) => t + p * r.w[a] * r.w[a], 0) - r.trainOnlyPred * r.trainOnlyPred) / state.M));
+    summary = {truth, mean: m, sd, bias: m - truth, rmse: Math.sqrt(current.mse), skew, trainSd, testSd: Math.sqrt(expectedTestVar),
+      lo: percentile(sorted, .025), hi: percentile(sorted, .975), sorted,
+      optimalLambda: optimal.lambda, optimalMse: optimal.mse, mse: current.mse, trainMse: mean(results.map(r => r.trainMse))};
+  }
+
+  /* Compute scheduling: coalesce bursts of input events into one computation per frame. */
+  const pending = {scheduled: false, fresh: false, test: false};
+  function requestCompute(fresh = false, refreshTest = false) {
+    pending.fresh ||= fresh; pending.test ||= refreshTest;
+    if (pending.scheduled) return;
+    pending.scheduled = true;
+    requestAnimationFrame(() => {
+      const {fresh: f, test: t} = pending;
+      Object.assign(pending, {scheduled: false, fresh: false, test: false});
+      updateExperiment(f, t);
+    });
+  }
+  function updateExperiment(fresh, refreshTest = false) {
+    updateVectors();
+    if (fresh) { createSamples(); fillTables(); }
+    if (fresh || refreshTest) createTestSamples();
+    recomputeFits();
+    updateReadouts();
+    drawAll();
+  }
+
+  /* ================================================================
+   * 7. Canvas plumbing
+   * ================================================================ */
+  const canvases = {};
+  for (const id of ['blochCanvas', 'simplexCanvas', 'histCanvas', 'specCanvas', 'mseCanvas']) {
+    const el = $(id);
+    canvases[id] = {el, ctx: el.getContext('2d'), w: 0, h: 0, dpr: 0};
+  }
+  /** Size the backing store (CSS size cached by the ResizeObserver), reset the transform and clear. */
+  function beginCanvas(id) {
+    const c = canvases[id];
+    if (!c.w) { const r = c.el.getBoundingClientRect(); c.w = Math.max(1, r.width); c.h = Math.max(1, r.height); }
+    const dpr = Math.min(2, window.devicePixelRatio || 1), bw = Math.round(c.w * dpr), bh = Math.round(c.h * dpr);
+    if (c.el.width !== bw || c.el.height !== bh) { c.el.width = bw; c.el.height = bh; }
+    c.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.ctx.clearRect(0, 0, c.w, c.h);
+    return c;
+  }
+  function line(ctx, pts, color, width = 1, dashes = []) {
+    if (pts.length < 2) return;
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dashes);
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
+    ctx.stroke();
+    if (dashes.length) ctx.setLineDash([]);
+  }
+  function circle(ctx, x, y, r, fill, stroke = '', lw = 1) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
+  }
+  function diamond(ctx, x, y, r, fill, stroke) {
+    ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath();
+    ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = stroke; ctx.stroke();
+  }
+  function arrow(ctx, a, b, color, weight = 2) {
+    line(ctx, [a, b], color, weight);
+    const th = Math.atan2(b[1] - a[1], b[0] - a[0]), len = 7;
+    line(ctx, [[b[0] - len * Math.cos(th - .42), b[1] - len * Math.sin(th - .42)], b, [b[0] - len * Math.cos(th + .42), b[1] - len * Math.sin(th + .42)]], color, weight);
+  }
+  function text(ctx, s, x, y, color = '#adbfce', f = font(11), align = 'left') {
+    ctx.font = f; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(s, x, y);
+  }
+  /** Perspective projector for an orbit camera; trigonometry is evaluated once per frame. */
+  function makeProjector(cam, cx, cy, scale, focus = [0, 0, 0]) {
+    const ca = Math.cos(cam.az), sa = Math.sin(cam.az), ce = Math.cos(cam.el), se = Math.sin(cam.el);
+    const rx = -sa, ry = ca, ux = -se * ca, uy = -se * sa, uz = ce, fx = ce * ca, fy = ce * sa, fz = se;
+    return p => {
+      const x = p[0] - focus[0], y = p[1] - focus[1], z = p[2] - focus[2];
+      const depth = fx * x + fy * y + fz * z, k = 4.8 / (4.8 - depth);
+      return [cx + scale * (rx * x + ry * y) * k, cy - scale * (ux * x + uy * y + uz * z) * k, depth];
+    };
+  }
+  const xy = p => [p[0], p[1]];
+
+  /* ================================================================
+   * 8. Panel 1: Bloch sphere
+   * ================================================================ */
+  const GRID_CURVES = [
+    ...[-60, -30, 0, 30, 60].map(elev => ({primary: elev === 0, at: t => { const a = 2 * Math.PI * t, e = rad(elev); return [Math.cos(e) * Math.cos(a), Math.cos(e) * Math.sin(a), Math.sin(e)]; }})),
+    ...[0, 30, 60, 90, 120, 150].map(d => ({primary: d % 90 === 0, at: t => { const a = 2 * Math.PI * t, b = rad(d); return [Math.sin(a) * Math.cos(b), Math.sin(a) * Math.sin(b), Math.cos(a)]; }}))
+  ].map(c => ({primary: c.primary, pts: Array.from({length: 96}, (_, j) => c.at(j / 95))}));
+  // Grid strokes bucketed by (front/back, primary): four strokes per frame instead of ~1,000.
+  const GRID_STYLES = [
+    {front: false, primary: false, color: 'rgba(110,178,210,0.075)', width: .65},
+    {front: false, primary: true, color: 'rgba(110,178,210,0.14)', width: 1.1},
+    {front: true, primary: false, color: 'rgba(110,178,210,0.19)', width: .65},
+    {front: true, primary: true, color: 'rgba(110,178,210,0.31)', width: 1.1}
+  ];
+  function drawSphereGrid(ctx, proj) {
+    const paths = GRID_STYLES.map(() => new Path2D());
+    for (const curve of GRID_CURVES) {
+      let last = proj(curve.pts[0]), lastBucket = -1;
+      for (let j = 1; j < curve.pts.length; j++) {
+        const cur = proj(curve.pts[j]), bucket = ((last[2] + cur[2]) / 2 > 0 ? 2 : 0) + (curve.primary ? 1 : 0);
+        if (bucket !== lastBucket) paths[bucket].moveTo(last[0], last[1]);
+        paths[bucket].lineTo(cur[0], cur[1]);
+        last = cur; lastBucket = bucket;
+      }
+    }
+    ctx.setLineDash([]);
+    GRID_STYLES.forEach((s, i) => { ctx.strokeStyle = s.color; ctx.lineWidth = s.width; ctx.stroke(paths[i]); });
+  }
+  function drawBloch() {
+    const {ctx, w, h} = beginCanvas('blochCanvas'), cam = camera.bloch;
+    const cx = w * .49, cy = h * .48, scale = Math.min(w * .39, h * .39) * cam.zoom, proj = makeProjector(cam, cx, cy, scale);
+    const grad = ctx.createRadialGradient(cx - scale * .5, cy - scale * .7, scale * .05, cx, cy, scale * 1.12);
+    grad.addColorStop(0, 'rgba(46,91,117,.22)'); grad.addColorStop(.73, 'rgba(22,59,81,.10)'); grad.addColorStop(1, 'rgba(67,121,160,.03)');
+    circle(ctx, cx, cy, scale, grad, 'rgba(94,160,197,.22)', 1);
+    drawSphereGrid(ctx, proj);
+    for (const [v, label, color] of [[[1, 0, 0], 'X', '#82a8ce'], [[0, 1, 0], 'Y', '#82a8ce'], [[0, 0, 1], 'Z', '#d9eefc']]) {
+      const m = proj(v.map(x => -x)), p = proj(v), p2 = proj(v.map(x => x * 1.13));
+      line(ctx, [xy(m), xy(p)], rgba(color, .38), 1.2, [3, 4]);
+      line(ctx, [[cx, cy], xy(p)], rgba(color, .68), 1.4);
+      text(ctx, label, p2[0], p2[1], color, font(12, true), 'center');
+    }
+    const tips = tooltipPoints.bloch = [], center = [cx, cy];
+    if (state.showPovm) povm.forEach((m, i) => {
+      const a = proj(m.v), tip = proj(m.direction), col = effectColor(i);
+      line(ctx, [xy(a), xy(tip)], rgba(col, .35), 1, [3, 4]);
+      arrow(ctx, center, xy(a), col, 2.4);
+      circle(ctx, a[0], a[1], 4.1, col, '#fff', .6);
+      circle(ctx, tip[0], tip[1], 2.3, rgba(col, .55));
+      text(ctx, `μ${i + 1}`, a[0] + 10, a[1] - 10, col, font(12, true));
+      tips.push({x: a[0], y: a[1], detail: `POVM effect μ${i + 1}<br>μ = (t I + v·σ)/2<br>Tr(μ) = ${m.t.toFixed(4)}<br>v = (${m.v.map(x => fmt(x, 3)).join(', ')})<br>Arrow is v = t n, |v| = t.`});
+    });
+    if (state.showObservable) {
+      const a = proj(obsN), gold = '#f1bc76';
+      arrow(ctx, center, xy(a), gold, 3);
+      circle(ctx, a[0], a[1], 4.4, gold, '#fff', .8);
+      text(ctx, 'O', a[0] + 10, a[1] - 11, gold, font(13, true));
+      tips.push({x: a[0], y: a[1], detail: `Target O = n·σ<br>n = (${obsN.map(x => fmt(x, 3)).join(', ')})<br>Arrow tip is the unit observable direction.`});
+    }
+    if (state.showTrain) {
+      const zMode = state.trainingMode === 'z';
+      if (zMode) line(ctx, [xy(proj([0, 0, -1])), xy(proj([0, 0, 1]))], 'rgba(172,210,235,.48)', 2);
+      const labelEvery = Math.max(1, Math.ceil(state.K / 9));
+      const pts = trainBloch.map((r, i) => ({r, i, p: proj(r)})).sort((a, b) => a.p[2] - b.p[2]);
+      for (const {r, i, p} of pts) {
+        const col = trainingColor(i), inBack = !zMode && p[2] < 0;
+        circle(ctx, p[0], p[1], 7.9, 'rgba(8,16,28,.78)');
+        circle(ctx, p[0], p[1], state.K > 18 ? 4.4 : 5.9, inBack ? rgba(col, .60) : col, '#e1f6ff', inBack ? .5 : 1.1);
+        if (i % labelEvery === 0 || i === state.K - 1) {
+          const left = i % 2 === 0;
+          text(ctx, zMode ? fmt(r[2], state.K > 10 ? 2 : 1) : `ρ${i + 1}`, p[0] + (left ? 11 : -11), p[1] - 9, col, font(10, true), left ? 'left' : 'right');
+        }
+        tips.push({x: p[0], y: p[1], detail: `Training ρ${i + 1}<br>${zMode ? 'α = ' + fmt(r[2], 3) : 'Uniform random pure state'}<br>r = (${r.map(x => fmt(x, 3)).join(', ')})<br>Tr(Oρ) = ${fmt(dot(obsN, r), 4)}`});
+      }
+    }
+    if (state.showTest) {
+      const ps = proj(testBloch);
+      if (norm(testBloch) > .001) line(ctx, [center, xy(ps)], 'rgba(255,255,255,.72)', 1.3, [4, 3]);
+      circle(ctx, ps[0], ps[1], 13, 'rgba(236,248,255,.1)');
+      diamond(ctx, ps[0], ps[1], 7.2, '#fcfefd', '#aecde7');
+      text(ctx, 'σ', ps[0] - 15, ps[1] - 13, '#fff', font(14, true));
+      tips.push({x: ps[0], y: ps[1], detail: `Test state σ<br>r = (${testBloch.map(x => fmt(x, 3)).join(', ')})<br>Tr(Oσ) = ${fmt(summary.truth, 4)}`});
+    }
+    text(ctx, '|r_test| = ' + norm(testBloch).toFixed(3), 15, h - 18, '#89a6b8');
+  }
+
+  /* ================================================================
+   * 9. Panel 2: probability simplex (first three outcomes)
+   * ================================================================ */
+  function convexHull(points) {
+    // Exact A=3 features share an affine plane, so a monotone chain in (p1, p2) suffices.
+    const ps = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    if (ps.length <= 2) return ps;
+    const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const half = list => { const out = []; for (const p of list) { while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], p) <= 1e-12) out.pop(); out.push(p); } out.pop(); return out; };
+    return half(ps).concat(half(ps.slice().reverse()));
+  }
+  function drawSimplexFrame(ctx, proj, v, w, h) {
+    if (state.A === 2) {
+      line(ctx, [xy(v[0]), xy(v[1])], 'rgba(142,202,235,.87)', 2.6);
+      text(ctx, 'p₃ = 0', w * .52, h * .17, '#87b5d2', font(11), 'center');
+    } else if (state.A === 3) {
+      ctx.beginPath(); ctx.moveTo(v[0][0], v[0][1]); ctx.lineTo(v[1][0], v[1][1]); ctx.lineTo(v[2][0], v[2][1]); ctx.closePath();
+      ctx.fillStyle = 'rgba(41,101,130,.17)'; ctx.fill(); ctx.strokeStyle = 'rgba(145,201,232,.76)'; ctx.lineWidth = 1.5; ctx.stroke();
+      for (let axis = 0; axis < 3; axis++) for (const part of [.25, .5, .75]) {
+        const other = [0, 1, 2].filter(j => j !== axis), a = [0, 0, 0], b = [0, 0, 0];
+        a[axis] = b[axis] = part; a[other[0]] = 1 - part; b[other[1]] = 1 - part;
+        line(ctx, [xy(proj(a)), xy(proj(b))], 'rgba(123,178,207,.18)', .8);
+      }
+    } else {
+      // Three displayed probabilities plus the remainder fill a tetrahedron.
+      const O = proj([0, 0, 0]), pts = [O, ...v];
+      [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]
+        .map(f => ({f, depth: (pts[f[0]][2] + pts[f[1]][2] + pts[f[2]][2]) / 3}))
+        .sort((a, b) => a.depth - b.depth)
+        .forEach(({f, depth}) => {
+          ctx.beginPath(); ctx.moveTo(pts[f[0]][0], pts[f[0]][1]); ctx.lineTo(pts[f[1]][0], pts[f[1]][1]); ctx.lineTo(pts[f[2]][0], pts[f[2]][1]); ctx.closePath();
+          ctx.fillStyle = depth > 0 ? 'rgba(46,117,153,.145)' : 'rgba(49,105,140,.07)'; ctx.fill();
+        });
+      for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) line(ctx, [xy(pts[i]), xy(pts[j])], 'rgba(130,189,220,.52)', 1.25, i === 0 ? [4, 4] : []);
+      text(ctx, 'other outcomes = 1 − (p₁ + p₂ + p₃)', 15, 22, '#82abc5', font(10));
+      text(ctx, '(0,0,0)', O[0] - 7, O[1] + 13, '#7097ad', font(10), 'right');
+    }
+  }
+  function drawContours(ctx, proj, curves, styleOf) {
+    curves.forEach((curve, j) => { const s = styleOf(j); line(ctx, curve.map(p => xy(proj(p))), s.color, s.width, s.dash); });
+  }
+  function drawSimplex() {
+    const {ctx, w, h} = beginCanvas('simplexCanvas'), cam = camera.simplex;
+    const center = state.A === 2 ? [.49, .49, 0] : state.A === 3 ? [1 / 3, 1 / 3, 1 / 3] : [.25, .25, .25];
+    const cx = w * .5, cy = h * .54, scale = Math.min(w * .42, h * .69) * cam.zoom;
+    const project = makeProjector(cam, cx, cy, scale, center), proj = p => project(projected3(p));
+    const vertices = [[1, 0, 0], [0, 1, 0], [0, 0, 1]], v = vertices.map(proj);
+    drawSimplexFrame(ctx, proj, v, w, h);
+    v.slice(0, state.A === 2 ? 2 : 3).forEach((pp, j) => {
+      circle(ctx, pp[0], pp[1], 3.5, '#aecde0');
+      const dx = pp[0] - cx, dy = pp[1] - cy, r = Math.hypot(dx, dy) || 1;
+      text(ctx, `p${j + 1} = 1`, pp[0] + dx / r * 23, pp[1] + dy / r * 20, '#b1cfdf', font(11, true), 'center');
+    });
+    const tips = tooltipPoints.simplex = [];
+    const count = Math.min(samples.length, 135, Math.max(22, Math.floor(1800 / state.K)));
+    if (state.showCloud) {
+      const dots = [];
+      for (let i = 0; i < state.K; i++) for (let j = 0; j < count; j++) {
+        const p = proj(samples[Math.min(samples.length - 1, Math.floor(j * samples.length / count))].P[i]);
+        dots.push({x: p[0], y: p[1], z: p[2], i});
+      }
+      dots.sort((a, b) => a.z - b.z);
+      const fills = TRAIN_COLORS.map(c => rgba(c, .39));
+      let current = -1;
+      for (const d of dots) {
+        if (d.i !== current) { ctx.fillStyle = fills[d.i]; current = d.i; }
+        ctx.beginPath(); ctx.arc(d.x, d.y, 2.5, 0, 2 * Math.PI); ctx.fill();
+      }
+    }
+    if (state.showEllipse) trainSpread.forEach((s, i) => {
+      const col = trainingColor(i);
+      drawContours(ctx, proj, s.contours, j => j === 0 ? {color: rgba(col, .91), width: 1.6, dash: [5, 3]} : {color: rgba(col, .57), width: 1.1, dash: [2, 4]});
+    });
+    if (state.M !== Infinity) {
+      if (state.showCloud) {
+        const nt = Math.min(testSamples.length, 135), dots = [];
+        for (let j = 0; j < nt; j++) dots.push(proj(testSamples[Math.min(testSamples.length - 1, Math.floor(j * testSamples.length / nt))]));
+        dots.sort((a, b) => a[2] - b[2]);
+        ctx.fillStyle = 'rgba(244,200,130,.45)';
+        for (const q of dots) { ctx.beginPath(); ctx.arc(q[0], q[1], 2.2, 0, 2 * Math.PI); ctx.fill(); }
+      }
+      if (state.showEllipse) drawContours(ctx, proj, testContours, j => ({color: j === 0 ? 'rgba(246,211,156,.95)' : 'rgba(246,211,156,.58)', width: j === 0 ? 1.7 : 1.1, dash: [3, 3]}));
+    }
+    if (state.trainingMode === 'z') {
+      line(ctx, exactP.map(p => xy(proj(p))), 'rgba(236,247,255,.57)', 1.35);
+    } else if (state.A === 3) {
+      const hull = convexHull(exactP).map(proj);
+      if (hull.length >= 3) {
+        ctx.beginPath(); ctx.moveTo(hull[0][0], hull[0][1]);
+        for (let i = 1; i < hull.length; i++) ctx.lineTo(hull[i][0], hull[i][1]);
+        ctx.closePath(); ctx.fillStyle = 'rgba(215,233,247,.045)'; ctx.fill();
+      }
+      if (hull.length >= 2) line(ctx, hull.map(xy).concat(hull.length >= 3 ? [xy(hull[0])] : []), 'rgba(236,247,255,.42)', 1.1, [4, 4]);
+    }
+    if (state.showPca && representative) {
+      const eig = representative.centered, anchor = projected3(representative.meanP);
+      for (let i = 0; i < Math.min(3, eig.length); i++) {
+        if (eig[i].eig < 1e-13) continue;
+        // A full A-dimensional singular vector, shown through its first three coordinates.
+        const axis = projected3(eig[i].vec), width = Math.sqrt(eig[i].eig / Math.max(1, state.K - 1)) * 1.35;
+        if (norm(axis) < 1e-9) continue;
+        const a = proj(anchor.map((x, j) => x - .5 * width * axis[j])), b = proj(anchor.map((x, j) => x + .5 * width * axis[j]));
+        arrow(ctx, xy(a), xy(b), PCA_COLORS[i], 2.4);
+        text(ctx, `s${i + 1}=${Math.sqrt(eig[i].eig).toFixed(3)}`, b[0] + 8, b[1] - 7, PCA_COLORS[i], font(10, true));
+      }
+    }
+    exactP.forEach((p, i) => {
+      const a = proj(p);
+      circle(ctx, a[0], a[1], 6.3, 'rgba(8,21,36,.9)', '#fff', 1.7);
+      circle(ctx, a[0], a[1], 3.8, trainingColor(i));
+      tips.push({x: a[0], y: a[1], detail: `Exact p(ρ${i + 1})<br>r = (${trainBloch[i].map(x => fmt(x, 3)).join(', ')})<br>p = (${p.map(x => x.toFixed(4)).join(', ')})<br>Shown: (${projected3(p).map(x => x.toFixed(4)).join(', ')})`});
+    });
+    const a = proj(testP);
+    circle(ctx, a[0], a[1], 11, 'rgba(255,255,255,.13)'); diamond(ctx, a[0], a[1], 6.8, '#f8fcff', '#b1ccdd');
+    text(ctx, 'p(σ)', a[0] + 10, a[1] - 10, '#fff', font(11, true));
+    tips.push({x: a[0], y: a[1], detail: `Exact test p(σ)<br>p = (${testP.map(x => x.toFixed(4)).join(', ')})<br>Shown: (${projected3(testP).map(x => x.toFixed(4)).join(', ')})`});
+    text(ctx, `N=${fmtN(state.N)} · M=${fmtShots(state.M)} · ${count} draws/state`, 13, h - 14, '#8fa9ba', font(10));
+  }
+
+  /* ================================================================
+   * 10. Panel 3: prediction histogram
+   * ================================================================ */
+  const N_BINS = 37;
+  function histogramBins(low, high) {
+    const span = high - low, binW = span / N_BINS, counts = new Array(N_BINS).fill(0);
+    let clipped = 0;
+    for (const r of results) {
+      const b = Math.floor((r.pred - low) / span * N_BINS);
+      if (b < 0 || b >= N_BINS) clipped++; else counts[b]++;
+    }
+    return {binW, counts, clipped, dens: counts.map(c => c / (results.length * binW))};
+  }
+  const gaussianPdf = x => summary.sd > 1e-8 ? Math.exp(-.5 * ((x - summary.mean) / summary.sd) ** 2) / (Math.sqrt(2 * Math.PI) * summary.sd) : 0;
+  function autoHistogramAxes() {
+    const vals = summary.sorted, truth = summary.truth;
+    let low = Math.min(percentile(vals, .005), truth), high = Math.max(percentile(vals, .995), truth);
+    const extra = Math.max(.019, .11 * Math.max(high - low, .07));
+    low -= extra; high += extra;
+    const bins = histogramBins(low, high);
+    const ymax = 1.14 * Math.max(...bins.dens, .01, summary.sd > 1e-8 ? gaussianPdf(summary.mean) : 0);
+    return {low, high, ymax, bins};
+  }
+  function updateHistogramAxisControls(axes) {
+    const locked = state.histAxesLocked, btn = $('lockHistAxes'), label = $('histAxisLabel');
+    const f = x => Math.abs(x) >= 100 ? x.toFixed(1) : Math.abs(x) >= 1 ? x.toFixed(2) : x.toFixed(3);
+    btn.classList.toggle('active', locked);
+    btn.setAttribute('aria-pressed', String(locked));
+    btn.textContent = locked ? 'Unlock axes' : 'Lock axes';
+    $('refitHistAxes').disabled = !locked;
+    label.classList.toggle('locked', locked);
+    label.textContent = `${locked ? 'Locked' : 'Auto'}: x [${f(axes.low)}, ${f(axes.high)}] · density 0–${f(axes.ymax)}`;
+  }
+  function setHistogramLock(locked, refit = false) {
+    if (locked) lockedHistogramAxes = refit || !lastHistogramAxes ? stripBins(autoHistogramAxes()) : {...lastHistogramAxes};
+    else lockedHistogramAxes = null;
+    state.histAxesLocked = locked;
+    drawHistogram();
+  }
+  const stripBins = ({low, high, ymax}) => ({low, high, ymax});
+  function drawHistogram() {
+    const {ctx, w, h} = beginCanvas('histCanvas');
+    if (!results.length) return;
+    const L = 53, R = w - 18, T = 31, B = h - 48;
+    const auto = state.histAxesLocked && lockedHistogramAxes ? null : autoHistogramAxes();
+    const axes = auto ? stripBins(auto) : lockedHistogramAxes;
+    lastHistogramAxes = {...axes};
+    updateHistogramAxisControls(axes);
+    const {low, high, ymax} = axes, span = high - low, {binW, counts, clipped, dens} = auto ? auto.bins : histogramBins(low, high);
+    const xp = x => L + (x - low) / span * (R - L), yp = y => B - y / ymax * (B - T);
+    for (let k = 0; k <= 4; k++) {
+      const y = ymax * k / 4, p = yp(y);
+      line(ctx, [[L, p], [R, p]], 'rgba(106,152,182,.18)', .8);
+      text(ctx, y.toFixed(y >= 10 ? 0 : 2), L - 8, p + 4, '#7994a8', font(10), 'right');
+    }
+    // Bars, fit and reference lines are clipped to the plotting rectangle.
+    ctx.save(); ctx.beginPath(); ctx.rect(L, T, R - L, B - T); ctx.clip();
+    const qlo = xp(clamp(summary.lo, low, high)), qhi = xp(clamp(summary.hi, low, high));
+    ctx.fillStyle = 'rgba(100,170,202,.07)'; ctx.fillRect(qlo, T, Math.max(0, qhi - qlo), B - T);
+    ctx.fillStyle = 'rgba(101,159,228,.55)';
+    counts.forEach((_, i) => {
+      const top = yp(dens[i]), x0 = xp(low + i * binW) + .8, x1 = xp(low + (i + 1) * binW) - .5;
+      ctx.fillRect(x0, top, Math.max(1, x1 - x0), Math.max(0, B - top));
+    });
+    if (summary.sd > 1e-8) line(ctx, Array.from({length: 221}, (_, i) => { const x = low + span * i / 220; return [xp(x), yp(gaussianPdf(x))]; }), '#f0ba77', 2);
+    const inRange = x => x >= low && x <= high;
+    if (inRange(summary.truth)) line(ctx, [[xp(summary.truth), T], [xp(summary.truth), B]], '#f6faff', 1.6, [5, 4]);
+    if (inRange(summary.mean)) line(ctx, [[xp(summary.mean), T], [xp(summary.mean), B]], '#6bdbe5', 1.6);
+    ctx.restore();
+    if (inRange(summary.truth)) text(ctx, 'truth', clamp(xp(summary.truth), 48, w - 22), 18, '#f6faff', font(10, true), 'center');
+    if (inRange(summary.mean)) text(ctx, 'mean', clamp(xp(summary.mean), 48, w - 22), 32, '#6bdbe5', font(10, true), 'center');
+    line(ctx, [[L, B], [R, B]], '#5d8099', 1); line(ctx, [[L, T], [L, B]], '#5d8099', 1);
+    for (let k = 0; k <= 5; k++) {
+      const x = low + span * k / 5, xx = xp(x);
+      line(ctx, [[xx, B], [xx, B + 4]], '#688ba3');
+      text(ctx, niceNum(x), xx, B + 17, '#8fa6b8', font(10), 'center');
+    }
+    text(ctx, 'predicted expectation  ô', w / 2, h - 11, '#c3d8e6', font(11), 'center');
+    ctx.save(); ctx.translate(13, (T + B) / 2); ctx.rotate(-Math.PI / 2); text(ctx, 'density', 0, 0, '#809cac', font(10), 'center'); ctx.restore();
+    const warnings = [];
+    if (clipped) warnings.push(`${clipped} outside x limits`);
+    if (dens.some(y => y > ymax + 1e-12) || (summary.sd > 1e-8 && gaussianPdf(summary.mean) > ymax)) warnings.push('density exceeds y limit');
+    if (!inRange(summary.truth)) warnings.push('truth outside x limits');
+    if (warnings.length) text(ctx, warnings.join('  ·  '), R, T + 19, '#f1bc76', font(9), 'right');
+  }
+
+  /* ================================================================
+   * 11. Lower panels: singular-value spectrum and ridge MSE
+   * ================================================================ */
+  const spectrumValues = eig => eig.slice(0, Math.min(state.K, state.A)).map(e => Math.sqrt(e.eig));
+  /** Shared y-axis for log/linear line plots. */
+  function valueAxis(isLog, low, high, top, bottom) {
+    const lo = Math.log10(low), hi = Math.log10(high);
+    return {
+      map: v => isLog ? bottom - (Math.log10(Math.max(v, low)) - lo) / (hi - lo) * (bottom - top) : bottom - v / high * (bottom - top),
+      tick: t => isLog ? 10 ** (lo + (hi - lo) * t) : high * t,
+      label: v => isLog ? v.toExponential(1) : niceNum(v)
+    };
+  }
+  function drawGrid(ctx, axis, left, right, top, bottom, color, width) {
+    for (let t = 0; t <= 4; t++) {
+      const y = bottom - (bottom - top) * t / 4;
+      line(ctx, [[left, y], [right, y]], color, width);
+      text(ctx, axis.label(axis.tick(t / 4)), left - 6, y + 3, '#86a0b3', font(9), 'right');
+    }
+  }
+  function drawSpectrum() {
+    const {ctx, w, h} = beginCanvas('specCanvas');
+    if (!representative) return;
+    const noisyRaw = spectrumValues(representative.raw), noisyCentered = spectrumValues(representative.centered);
+    const exactRaw = spectrumValues(exactEigen.raw), exactCentered = spectrumValues(exactEigen.centered);
+    const all = [...noisyRaw, ...noisyCentered, ...exactRaw, ...exactCentered];
+    const max = Math.max(1e-9, ...all), minimum = Math.min(...all.filter(v => v > 1e-13), max);
+    const isLog = state.spectrumScale === 'log', left = 53, right = w - 14, top = 15, bottom = h - 32;
+    const axis = isLog ? valueAxis(true, Math.max(max * 1e-7, minimum * .56), max * 1.45, top, bottom) : valueAxis(false, 0, max * 1.16, top, bottom);
+    const count = noisyRaw.length, xp = i => count <= 1 ? (left + right) / 2 : left + (i / (count - 1)) * (right - left);
+    drawGrid(ctx, axis, left, right, top, bottom, 'rgba(105,160,194,.18)', .75);
+    for (const {data, col, dash, size} of [
+      {data: exactRaw, col: 'rgba(120,196,243,.49)', dash: [4, 4], size: 2},
+      {data: exactCentered, col: 'rgba(208,167,255,.49)', dash: [4, 4], size: 2},
+      {data: noisyRaw, col: '#78c4f3', dash: [], size: 3},
+      {data: noisyCentered, col: '#d0a7ff', dash: [], size: 3}
+    ]) {
+      let last = null;
+      for (let i = 0; i < count; i++) {
+        if (data[i] <= 1e-13) {
+          // Structural zeros: small crosses on the baseline.
+          const x = xp(i);
+          line(ctx, [[x - 2.2, bottom - 2], [x + 2.2, bottom + 2]], col, 1.1);
+          line(ctx, [[x - 2.2, bottom + 2], [x + 2.2, bottom - 2]], col, 1.1);
+          last = null; continue;
+        }
+        const a = [xp(i), axis.map(data[i])];
+        if (last) line(ctx, [last, a], col, size === 3 ? 1.9 : 1.2, dash);
+        circle(ctx, a[0], a[1], size, col);
+        last = a;
+      }
+    }
+    const tickStep = Math.max(1, Math.ceil(count / 8));
+    for (let i = 0; i < count; i++) if (i % tickStep === 0 || i === count - 1) {
+      const x = xp(i);
+      line(ctx, [[x, bottom], [x, bottom + 4]], '#6e90a5', 1);
+      text(ctx, String(i + 1), x, bottom + 16, '#a9c0d1', font(10), 'center');
+    }
+    line(ctx, [[left, top], [left, bottom], [right, bottom]], '#769ab0', 1.1);
+    text(ctx, 'index i', (left + right) / 2, h - 5, '#a8c3d5', font(10), 'center');
+    const rank = exactRaw.filter(v => v > exactRaw[0] * 1e-7).length;
+    $('specReadout').textContent = `exact rank ${rank} of ${count}  ·  σ_min ${fmtSci(noisyRaw[count - 1])}  ·  centered ${fmtSci(noisyCentered[count - 1])}`;
+  }
+  function drawMse() {
+    const {ctx, w, h} = beginCanvas('mseCanvas');
+    if (!mseCurve.length) return;
+    const left = 53, right = w - 17, top = 18, bottom = h - 36, {zeroAt: minX, max: maxX} = RIDGE_AXIS;
+    const xp = lambda => left + (ridgeLog(lambda) - minX) / (maxX - minX) * (right - left);
+    // Scale to the MSE curve only: near-zero bias² or variance would flatten it on a log axis.
+    const mseValues = mseCurve.map(p => p.mse), ymax = Math.max(1e-13, ...mseValues) * 1.18;
+    const axis = state.mseScale === 'log'
+      ? valueAxis(true, Math.max(ymax * 1e-7, Math.min(...mseValues.filter(v => v > 1e-16), ymax) * .48), ymax, top, bottom)
+      : valueAxis(false, 0, ymax, top, bottom);
+    msePlotRegion = {left, right};
+    drawGrid(ctx, axis, left, right, top, bottom, 'rgba(100,158,190,.18)', 1);
+    for (const lambda of [0, 1e-7, 1e-5, 1e-3, .1, 10]) {
+      const x = xp(lambda);
+      line(ctx, [[x, bottom], [x, bottom + 4]], '#628aa5', 1);
+      text(ctx, lambda === 0 ? '0' : lambda.toExponential(0), x, bottom + 16, '#a1b8c9', font(9), 'center');
+    }
+    ctx.save(); ctx.beginPath(); ctx.rect(left, top, right - left, bottom - top); ctx.clip();
+    for (const {key, col, width, dashes} of [
+      {key: 'variance', col: '#bd9aff', width: 1.2, dashes: []},
+      {key: 'bias2', col: '#f1bc76', width: 1.6, dashes: [5, 4]},
+      {key: 'mse', col: '#6bdbe5', width: 2.5, dashes: []}
+    ]) line(ctx, mseCurve.map(p => [xp(p.lambda), axis.map(p[key])]), col, width, dashes);
+    const current = mseCurve.find(p => p.lambda === state.lambda), optimal = mseCurve.reduce((best, p) => p.mse < best.mse ? p : best, mseCurve[0]);
+    const xCur = xp(state.lambda);
+    line(ctx, [[xCur, top], [xCur, bottom]], 'rgba(248,250,255,.85)', 1.3, [4, 4]);
+    circle(ctx, xp(optimal.lambda), axis.map(optimal.mse), 5.1, '#95efbf', '#ffffff', 1);
+    circle(ctx, xCur, axis.map(current.mse), 4.6, '#6bdbe5', '#efffff', 1.3);
+    ctx.restore();
+    line(ctx, [[left, top], [left, bottom], [right, bottom]], '#769ab0', 1.05);
+    text(ctx, 'λ (log scale; 0 at left)', (left + right) / 2, h - 5, '#afc9d8', font(10), 'center');
+    $('mseReadout').textContent = `λ = ${fmtRidge(state.lambda)}: ${fmtSci(current.mse)}  ·  best λ* = ${fmtRidge(optimal.lambda)}: ${fmtSci(optimal.mse)}`;
+  }
+  function drawAll() { drawBloch(); drawSimplex(); drawHistogram(); drawSpectrum(); drawMse(); }
+
+  /* ================================================================
+   * 12. Formulas: MathJax from a CDN when reachable, built-in HTML otherwise
+   * ================================================================ */
+  /**
+   * Converts the TeX subset used on this page to HTML (Unicode symbols, <i>, <b>, <sub>, <sup>,
+   * CSS fractions). It is the offline fallback, and it is shown immediately while MathJax loads,
+   * so raw TeX never appears on screen.
+   */
+  const texToHtml = (() => {
+    const GREEK = {alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ϵ', varepsilon: 'ε', zeta: 'ζ', eta: 'η', theta: 'θ', vartheta: 'ϑ',
+      iota: 'ι', kappa: 'κ', lambda: 'λ', mu: 'μ', nu: 'ν', xi: 'ξ', pi: 'π', rho: 'ρ', sigma: 'σ', tau: 'τ', upsilon: 'υ', phi: 'ϕ', varphi: 'φ',
+      chi: 'χ', psi: 'ψ', omega: 'ω', Gamma: 'Γ', Delta: 'Δ', Theta: 'Θ', Lambda: 'Λ', Xi: 'Ξ', Pi: 'Π', Sigma: 'Σ', Phi: 'Φ', Psi: 'Ψ', Omega: 'Ω'};
+    const SYMBOLS = {   // [character, TeX atom class]
+      cdot: ['·', 'bin'], times: ['×', 'bin'], pm: ['±', 'bin'], mp: ['∓', 'bin'],
+      sim: ['∼', 'rel'], approx: ['≈', 'rel'], in: ['∈', 'rel'], le: ['≤', 'rel'], leq: ['≤', 'rel'], ge: ['≥', 'rel'], geq: ['≥', 'rel'],
+      ne: ['≠', 'rel'], neq: ['≠', 'rel'], mid: ['∣', 'rel'], to: ['→', 'rel'], equiv: ['≡', 'rel'], propto: ['∝', 'rel'],
+      infty: ['∞', 'ord'], partial: ['∂', 'ord'], nabla: ['∇', 'ord'], ell: ['ℓ', 'ord'], dots: ['…', 'ord'], ldots: ['…', 'ord'], cdots: ['⋯', 'ord'],
+      '|': ['‖', 'ord'], '{': ['{', 'open'], '}': ['}', 'close'], '%': ['%', 'ord'], '&': ['&', 'ord'], '#': ['#', 'ord'], '_': ['_', 'ord'],
+      langle: ['⟨', 'open'], rangle: ['⟩', 'close'], sum: ['∑', 'op'], prod: ['∏', 'op'], int: ['∫', 'op']
+    };
+    const SPACES = {',': '\u2009', ':': '\u2005', ';': '\u2005', ' ': ' ', '!': '', '\\': ' ', quad: '\u2003', qquad: '\u2003\u2003'};
+    const ACCENTS = new Set(['hat', 'widehat', 'bar', 'overline', 'tilde', 'widetilde', 'vec', 'dot']);
+    const STYLES = {   // font switches: upright letters, an HTML wrapper, a letter map, an atom class
+      mathbf: {upright: true, wrap: 'b'}, boldsymbol: {upright: false, wrap: 'b'}, bm: {upright: false, wrap: 'b'},
+      mathrm: {upright: true}, mathit: {upright: false}, operatorname: {upright: true, cls: 'op'},
+      mathsf: {upright: true, wrap: 'm-sf'}, mathcal: {map: 'cal'}, mathscr: {map: 'cal'}, mathbb: {map: 'bb'}
+    };
+    const DELIMS = {'.': '', '|': '‖', lvert: '|', rvert: '|', lVert: '‖', rVert: '‖', langle: '⟨', rangle: '⟩', '{': '{', '}': '}'};
+    const IGNORED = new Set(['displaystyle', 'textstyle', 'scriptstyle', 'limits', 'nolimits', 'nonumber']);
+    const VULGAR = {'1/2': '½', '1/3': '⅓', '2/3': '⅔', '1/4': '¼', '3/4': '¾'};
+    const SCRIPT_CAPS = {B: 'ℬ', E: 'ℰ', F: 'ℱ', H: 'ℋ', I: 'ℐ', L: 'ℒ', M: 'ℳ', R: 'ℛ'}, DOUBLE_CAPS = {C: 'ℂ', H: 'ℍ', N: 'ℕ', P: 'ℙ', Q: 'ℚ', R: 'ℝ', Z: 'ℤ'};
+    const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const charClass = c => '=<>:'.includes(c) ? 'rel' : '+-*'.includes(c) ? 'bin' : ',;'.includes(c) ? 'punct' : '(['.includes(c) ? 'open' : ')]'.includes(c) ? 'close' : 'ord';
+    function mapLetter(map, c) {
+      if (!/[A-Z]/.test(c)) return c;
+      const named = map === 'cal' ? SCRIPT_CAPS : DOUBLE_CAPS;
+      return named[c] || String.fromCodePoint((map === 'cal' ? 0x1D49C : 0x1D538) + c.charCodeAt(0) - 65);
+    }
+    function tokenize(src) {
+      const out = [], re = /\\([a-zA-Z]+|[^a-zA-Z])|(\s+)|([\s\S])/g;
+      for (let m; (m = re.exec(src));) out.push(m[1] !== undefined ? {cmd: m[1]} : m[2] !== undefined ? {space: m[2]} : {ch: m[3]});
+      return out;
+    }
+    /** Lay out atoms with TeX-like spacing; a + or − with nothing to bind on the left or right is unary. */
+    function join(atoms) {
+      const solid = atoms.filter(a => a.cls !== 'space'), cls = new Map();
+      let prev = null;
+      solid.forEach((a, i) => {
+        let c = a.cls;
+        const next = solid[i + 1]?.cls;
+        if (c === 'bin' && (!prev || ['bin', 'rel', 'open', 'punct', 'op'].includes(prev) || !next || ['rel', 'close', 'punct'].includes(next))) c = 'ord';
+        cls.set(a, prev = c);
+      });
+      let html = '', last = null;
+      for (const a of atoms) {
+        if (a.cls === 'space') { html += a.html; continue; }
+        const c = cls.get(a);
+        if (last === 'op' && ['ord', 'inner', 'op'].includes(c)) html += '\u2009';
+        html += ['bin', 'rel', 'punct'].includes(c) ? `<span class="m-${c}">${a.html}</span>` : a.html;
+        last = c;
+      }
+      return html;
+    }
+    function convert(src) {
+      const toks = tokenize(src);
+      let pos = 0;
+      const peek = () => { while (toks[pos] && toks[pos].space) pos++; return toks[pos]; };
+      const next = () => { const t = peek(); pos++; return t; };
+      const leaf = (c, ctx, italic) => {
+        if (ctx.map) return esc(mapLetter(ctx.map, c));
+        return italic && !ctx.upright ? `<i>${c}</i>` : esc(c);
+      };
+      const delim = t => !t ? '' : t.ch !== undefined ? esc(DELIMS[t.ch] ?? t.ch) : esc(DELIMS[t.cmd] ?? '');
+      function seq(ctx, stop) {
+        const atoms = [];
+        for (let t = peek(); t; t = peek()) {
+          if (stop === '}' && t.ch === '}') { pos++; break; }
+          if (stop === 'right' && t.cmd === 'right') break;
+          const atom = parseAtom(ctx);
+          if (atom) atoms.push(atom.cls === 'space' ? atom : scripts(atom, ctx));
+        }
+        return atoms;
+      }
+      function argAtoms(ctx) {
+        const t = peek();
+        if (!t) return [];
+        if (t.ch === '{') { pos++; return seq(ctx, '}'); }
+        const atom = parseAtom(ctx);
+        return atom ? [atom] : [];
+      }
+      const arg = ctx => join(argAtoms(ctx));
+      function scripts(atom, ctx) {
+        let sub = null, sup = null;
+        for (let t = peek(); t; t = peek()) {
+          if (t.ch === '_' && sub === null) { pos++; sub = arg(ctx); }
+          else if (t.ch === '^' && sup === null) { pos++; sup = arg(ctx); }
+          else break;
+        }
+        if (sub === null && sup === null) return atom;
+        const s = sub !== null && sup !== null ? `<span class="m-ss"><span>${sup}</span><span>${sub}</span></span>` : sub !== null ? `<sub>${sub}</sub>` : `<sup>${sup}</sup>`;
+        return {cls: atom.cls, html: atom.html + s};
+      }
+      function parseAtom(ctx) {
+        const t = next();
+        if (t.ch !== undefined) {
+          const c = t.ch;
+          if (c === '{') return {cls: 'ord', html: join(seq(ctx, '}'))};
+          if (c === '}' || c === '^' || c === '_') return null;   // stray tokens are dropped
+          if (c === '~') return {cls: 'space', html: '\u00a0'};
+          if (c === "'") return {cls: 'ord', html: '′'};
+          return {cls: charClass(c), html: leaf(c === '-' ? '−' : c, ctx, /[a-zA-Z]/.test(c))};
+        }
+        const name = t.cmd;
+        if (name in SPACES) return {cls: 'space', html: SPACES[name]};
+        if (GREEK[name]) return {cls: 'ord', html: leaf(GREEK[name], {...ctx, map: null}, name[0] === name[0].toLowerCase())};
+        if (SYMBOLS[name]) return {cls: SYMBOLS[name][1], html: esc(SYMBOLS[name][0])};
+        if (IGNORED.has(name)) return null;
+        if (STYLES[name]) {
+          const s = STYLES[name], inner = arg({upright: s.upright ?? ctx.upright, map: s.map || null});
+          return {cls: s.cls || 'ord', html: s.wrap === 'b' ? `<b>${inner}</b>` : s.wrap ? `<span class="${s.wrap}">${inner}</span>` : inner};
+        }
+        if (name === 'text' || name === 'textrm' || name === 'mbox') {
+          let depth = 0, raw = '';
+          if (peek()?.ch !== '{') return {cls: 'ord', html: ''};
+          for (pos++; pos < toks.length; pos++) {
+            const k = toks[pos];
+            if (k.ch === '{') depth++;
+            if (k.ch === '}' && depth-- === 0) { pos++; break; }
+            raw += k.space ?? k.ch ?? (SYMBOLS[k.cmd]?.[0] || '');
+          }
+          return {cls: 'ord', html: `<span class="m-text">${esc(raw)}</span>`};
+        }
+        if (ACCENTS.has(name)) {
+          // Drawn by CSS rather than with combining characters, whose placement depends on the font.
+          const inner = arg(ctx), text = inner.replace(/<[^>]+>/g, ''), tall = /[A-Zbdfhklt0-9δθλϑ]/.test(text);
+          return {cls: 'ord', html: `<span class="m-acc m-${name}${tall ? ' m-tall' : ''}${inner.startsWith('<i>') ? ' m-slant' : ''}">${inner}</span>`};
+        }
+        if (name === 'frac' || name === 'tfrac' || name === 'dfrac') {
+          const plain = {upright: false, map: null}, num = arg(plain), den = arg(plain), v = VULGAR[num + '/' + den];
+          return v ? {cls: 'ord', html: v} : {cls: 'inner', html: `<span class="m-frac"><span>${num}</span><span>${den}</span></span>`};
+        }
+        if (name === 'sqrt') return {cls: 'ord', html: `√<span class="m-sqrt">${arg(ctx)}</span>`};
+        if (name === 'overset' || name === 'stackrel') {
+          const top = arg({upright: false, map: null}), base = argAtoms(ctx);
+          const one = base.length === 1;   // a lone symbol keeps its class (and spacing) as a relation, operator, …
+          return {cls: one ? base[0].cls : 'ord', html: `<span class="m-over">${one ? base[0].html : join(base)}<span class="m-over-top">${top}</span></span>`};
+        }
+        if (name === 'left') {
+          const open = delim(next()), body = join(seq(ctx, 'right'));
+          next();   // \right
+          const close = delim(next()), tall = /m-frac|m-ss|m-delim/.test(body);
+          const d = s => s && tall ? `<span class="m-delim">${s}</span>` : s;
+          return {cls: 'inner', html: d(open) + body + d(close)};
+        }
+        if (/^[bB]igg?[lrm]?$/.test(name)) {
+          const side = name.slice(-1);
+          return {cls: side === 'l' ? 'open' : side === 'r' ? 'close' : 'ord', html: `<span class="m-big">${delim(next())}</span>`};
+        }
+        return {cls: 'ord', html: esc(name)};   // unknown command: show its name rather than fail
+      }
+      return join(seq({upright: false, map: null}, null)).replace(/<\/i><i>/g, '');
+    }
+    return src => { try { return convert(src); } catch (err) { console.warn('Formula fallback failed for', src, err); return esc(src); } };
+  })();
+
+  /**
+   * Finds \(...\) and \[...\] in the page, renders them with texToHtml at once, and upgrades them
+   * to MathJax SVG if MathJax 3 can be loaded from a CDN (pinned version, subresource integrity).
+   */
+  const math = (() => {
+    const SOURCES = [
+      'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg-full.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js'
+    ];
+    const INTEGRITY = 'sha384-4kE/rQ11E8xT9QgrCBTyvenkuPfQo8rXYQvJZuMgxyPOoUfpatjQPlgdv6V5yhUK';   // MathJax 3.2.2 (Apache-2.0)
+    const PATTERN = /\\\(([\s\S]*?)\\\)|\\\[([\s\S]*?)\\\]/g, SKIP = 'script,style,textarea,pre,code,noscript,.tex';
+    const STATUS = {
+      loading: 'Calculations run locally · loading MathJax for formulas…',
+      mathjax: 'Calculations run locally · formulas typeset by MathJax',
+      fallback: 'Calculations run locally · formulas rendered offline'
+    };
+    let mathJax = null, loading = false;
+    const setStatus = kind => { const el = $('mathStatus'); if (el) el.textContent = STATUS[kind]; };
+
+    async function upgrade(spans) {
+      for (const span of spans) {
+        if (!span.isConnected || span.classList.contains('tex-mj')) continue;
+        try {
+          const node = await mathJax.tex2svgPromise(span.dataset.tex, {display: span.classList.contains('tex-display')});
+          span.replaceChildren(node);
+          span.classList.add('tex-mj');
+        } catch (err) { console.warn('MathJax could not typeset', span.dataset.tex, err); }
+      }
+    }
+    function typeset(root) {
+      const nodes = [], walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) if (/\\[([]/.test(n.nodeValue) && !n.parentElement.closest(SKIP)) nodes.push(n);
+      const spans = [];
+      for (const node of nodes) {
+        const text = node.nodeValue, frag = document.createDocumentFragment();
+        let last = 0;
+        for (const m of text.matchAll(PATTERN)) {
+          const span = document.createElement('span'), display = m[2] !== undefined;
+          span.className = display ? 'tex tex-display' : 'tex';
+          span.dataset.tex = display ? m[2] : m[1];
+          span.innerHTML = texToHtml(span.dataset.tex);
+          frag.append(text.slice(last, m.index), span);
+          spans.push(span);
+          last = m.index + m[0].length;
+        }
+        frag.append(text.slice(last));
+        node.replaceWith(frag);
+      }
+      if (mathJax) upgrade(spans);
+      return spans;
+    }
+    function load(source = 0) {
+      if (mathJax || (loading && source === 0)) return;
+      if (source >= SOURCES.length || navigator.onLine === false) {
+        loading = false;
+        setStatus('fallback');
+        window.addEventListener('online', () => load(), {once: true});   // try again when a connection appears
+        return;
+      }
+      loading = true;
+      setStatus('loading');
+      window.MathJax = {svg: {fontCache: 'local'}, startup: {typeset: false}};   // conversion is driven from here
+      const script = Object.assign(document.createElement('script'), {src: SOURCES[source], async: true, integrity: INTEGRITY, crossOrigin: 'anonymous'});
+      const fail = () => { script.remove(); load(source + 1); };
+      script.onerror = fail;
+      script.onload = () => {
+        const MJ = window.MathJax;
+        if (!MJ || !MJ.startup || !MJ.startup.promise) return fail();
+        MJ.startup.promise.then(() => {
+          mathJax = MJ; loading = false;
+          document.head.appendChild(MJ.svgStylesheet());
+          setStatus('mathjax');
+          return upgrade([...document.querySelectorAll('.tex')]);
+        }).catch(err => { console.warn('MathJax failed to start', err); loading = false; mathJax = null; setStatus('fallback'); });
+      };
+      document.head.appendChild(script);
+    }
+    return {typeset, load};
+  })();
+
+  /* ================================================================
+   * 13. DOM text: labels, tables, descriptions, POVM inspector
+   * ================================================================ */
+  const setText = (id, s) => { $(id).textContent = s; };
+  const syncInput = (id, v) => { const el = $(id); if (el.value !== String(v)) el.value = String(v); };
+  function setPressed(selector, isActive) {
+    for (const btn of document.querySelectorAll(selector)) {
+      const active = isActive(btn);
+      btn.classList.toggle('active', active);
+      if (btn.hasAttribute('aria-pressed')) btn.setAttribute('aria-pressed', String(active));
+    }
+  }
+  /** Slider readouts; aria-valuetext makes the index-based sliders announce real values. */
+  function updateControlLabels() {
+    const labels = {
+      shots: fmtN(state.N),
+      testShots: 'M = ' + (state.M === Infinity ? '∞ (exact)' : fmtN(state.M)),
+      gamma: 'γ = ' + state.gamma.toFixed(2),
+      ridge: 'λ = ' + fmtRidge(state.lambda),
+      trainingCount: 'K = ' + state.K,
+      outcomes: 'A = ' + state.A
+    };
+    for (const [id, s] of Object.entries(labels)) { setText(id + 'Value', s); $(id).setAttribute('aria-valuetext', id === 'shots' ? 'N = ' + s : s); }
+    setPressed('.training-mode-btn', b => b.dataset.trainMode === state.trainingMode);
+    setPressed('.sampler-btn', b => b.dataset.sampler === state.samplingMode);
+    setText('samplingStatus', state.samplingMode === 'gaussian' ? 'Covariance-matched Gaussian sampling' : 'Exact multinomial sampling');
+    setText('samplerHint', state.samplingMode === 'gaussian'
+      ? `Fast mode: draw a correlated Gaussian in the ${state.A - 1}-dimensional sum-to-one hyperplane, matching the exact multinomial covariance. Negative frequencies can occur at low shots (no clipping). Labels stay Gaussian.`
+      : `Exact independent ${state.A}-outcome multinomial draws for ${state.K} training states and the test state. Label noise stays Gaussian. With M = ∞, test frequencies are exact.`);
+  }
+  /** Text that depends on A, K, geometry or seeds. */
+  function updateModelText() {
+    const z = state.trainingMode === 'z', A = state.A;
+    setText('blochDescription', z ? `${state.K} equally spaced states from |0⟩ to |1⟩ on the Z-axis` : `${state.K} random pure states, uniform on the sphere`);
+    setText('trainingModeHint', z ? 'Z-axis: equally spaced from +Z to −Z, including mixed states. The exact probability matrix has rank ≤ 2.' : 'Sphere: Haar-uniform pure states on the surface (not in the Bloch ball). Increase K or draw a new random set.');
+    setText('outcomeHint', A === 2 ? 'Two-outcome rank-1 POVM = a projective qubit measurement. The 3D view shows (p₁,p₂,0).' : A === 3 ? 'Three-outcome rank-1 POVM: the full probability vector lies on a triangle.' : `Full ${A}-outcome probabilities are used for fitting; the 3D view displays (p₁,p₂,p₃) without renormalizing (p₁+p₂+p₃ ≤ 1).`);
+    setText('simplexTitle', A === 2 ? 'Two-outcome simplex' : A === 3 ? 'Probability simplex' : `${A}-outcome simplex`);
+    setText('simplexDescription', A === 2 ? 'p₁ and p₂ shown; the third coordinate is zero' : A === 3 ? 'Exact probabilities, shot-noise clouds, 95% contours' : 'p₁, p₂, p₃ shown; the rest is 1 − p₁ − p₂ − p₃');
+    setText('headerSeed', 'POVM seed ' + state.povmSeed + (z ? '' : ' · states seed ' + state.trainSeed));
+    const cap = Math.min(A, state.K, z ? 2 : 4);
+    setText('spectralInterpretation', z
+      ? `With Z-axis training, the exact K×${A} feature matrix has rank ≤ ${cap} (at most two), independent of the outcome count. Shot noise can populate additional singular directions.`
+      : `With randomly sampled pure states, generic exact K×${A} features have rank ${cap} (at most four): one normalization direction and up to three Bloch directions.${A > 4 ? ' More than four outcomes do not increase the dimension of the exact qubit feature family.' : ''}`);
+    $('resampleStates').disabled = z;
+  }
+  /** Text that depends on the observable and test state. */
+  function updateVectorText() {
+    setText('obsVector', `n = (${obsN.map(v => fmt(v, 2)).join(', ')})`);
+    setText('testVector', `r = (${testBloch.map(v => fmt(v, 2)).join(', ')})`);
+    setText('trainingLabel', state.trainingMode === 'z' ? `mean(ŷₖ) = ${fmt(obsN[2], 3)} αₖ` : 'mean(ŷₖ) = n · rₖ');
+    setText('trueValue', `⟨O⟩ = ${fmt(dot(obsN, testBloch), 4)}`);
+    setText('obsThetaValue', state.obsTheta + '°');
+    setText('obsPhiValue', state.obsPhi + '°');
+    setText('testZValue', fmt(state.testZ, 2));
+    setText('testPerpValue', state.testPerp.toFixed(2));
+    setText('testPhiValue', state.testPhi + '°');
+    setPressed('.observable-preset', b => {
+      const [th, ph] = OBS_PRESETS[b.dataset.obs];
+      return state.obsTheta === th && (th === 0 || state.obsPhi === ph); // any phi is "Z" when theta = 0
+    });
+    setPressed('.test-preset', b => {
+      const p = TEST_PRESETS[b.dataset.test];
+      return b.dataset.test === 'online' ? state.testPerp === 0 : state.testPerp === p.testPerp && state.testZ === p.testZ && state.testPhi === p.testPhi;
+    });
+  }
+  const fmtMse = x => x < 1e-14 ? '≈ 0' : fmtSci(x);
+  function updateReadouts() {
+    updateVectorText();
+    setText('statTrainMse', fmtMse(summary.trainMse));
+    setText('statTestMse', fmtMse(summary.mse));
+    setText('statMean', fmt(summary.mean, 4));
+    setText('statSd', summary.sd.toFixed(4));
+    setText('statBias', fmt(summary.bias, 4));
+    setText('statTrainSd', summary.trainSd.toFixed(4));
+    setText('statTestSd', summary.testSd.toFixed(4));
+    setText('statRange', '[' + fmt(summary.lo, 3) + ', ' + fmt(summary.hi, 3) + ']');
+    setText('histTag', fmtN(state.B) + ' runs');
+    setText('histNotes', `RMSE ${summary.rmse.toFixed(4)} · skewness ${summary.skew.toFixed(2)} · ideal noiseless prediction ${fmt(exactResult, 4)}. ${state.samplingMode === 'gaussian' ? 'Gaussian approximate frequencies' : 'Exact multinomial frequencies'}; test label noise = 0.`);
+  }
+  function fillTables() {
+    const rowHeader = state.trainingMode === 'z' ? 'αₖ' : 'state';
+    const label = i => state.trainingMode === 'z' ? fmt(trainBloch[i][2], 2) : `ρ${i + 1}`;
+    const cell = i => `<span class="state-chip" style="background:${trainingColor(i)}"></span>${label(i)}`;
+    const cells = xs => xs.map(x => `<td>${x.toFixed(4)}</td>`).join('');
+    setText('exactPTitle', `Exact ${state.K} × ${state.A} Born probability matrix`);
+    $('exactPHeadRow').innerHTML = `<th id="exactRowHeader">${rowHeader}</th>` + Array.from({length: state.A}, (_, i) => `<th>p${i + 1}</th>`).join('');
+    setText('covRowHeader', rowHeader);
+    $('exactPTable').innerHTML = exactP.map((p, i) => `<tr title="Bloch r = (${trainBloch[i].map(x => x.toFixed(4)).join(', ')})"><td>${cell(i)}</td>${cells(p)}</tr>`).join('');
+    $('covTable').innerHTML = trainSpread.map((s, i) => `<tr title="Projected p = (${s.center.map(x => x.toFixed(4)).join(', ')})"><td>${cell(i)}</td>${cells(s.sigma)}</tr>`).join('');
+  }
+
+  /**
+   * POVM inspector. Up to 80 formulas, so they are (re)built only while the <details> is open,
+   * debounced while sliders move.
+   */
+  const povmInfo = (() => {
+    const el = $('povmInfo'), details = el.closest('details');
+    let dirty = true, timer = 0;
+    function render() {
+      dirty = false;
+      el.innerHTML = povm.map((m, i) => {
+        const a = i + 1;
+        return `<div class="povm-effect"><div>\\(\\mu_{${a}}=\\tfrac12(t_{${a}} I+\\mathbf v_{${a}}\\cdot\\boldsymbol\\sigma)\\)</div><div>\\(t_{${a}}=${m.t.toFixed(5)}\\)</div><div>\\(\\mathbf v_{${a}}=(${m.v.map(x => fmt(x, 3)).join(',\\,')})\\)</div><div>\\(\\mathbf n_{${a}}=(${m.direction.map(x => fmt(x, 3)).join(',\\,')})\\)</div></div>`;
+      }).join('');
+      math.typeset(el);
+    }
+    details.addEventListener('toggle', () => { if (details.open && dirty) render(); });
+    return {
+      invalidate() { dirty = true; if (details.open) { clearTimeout(timer); timer = setTimeout(() => dirty && render(), 150); } },
+      renderNow: render
+    };
+  })();
+
+  /* ================================================================
+   * 14. Actions (shared by UI events and the public API)
+   * ================================================================ */
+  const actions = {
+    setOutcomeCount(A) { state.A = A; syncInput('outcomes', A); rebuildModel({povm: true}); updateControlLabels(); requestCompute(true); },
+    setTrainingCount(K) { state.K = K; syncInput('trainingCount', K); rebuildModel({training: true}); updateControlLabels(); requestCompute(true); },
+    setTrainingMode(mode) { state.trainingMode = mode; rebuildModel({training: true}); updateControlLabels(); requestCompute(true); },
+    resampleTrainingStates() { state.trainSeed = (state.trainSeed + 104729) >>> 0; rebuildModel({training: true}); requestCompute(true); },
+    newPovm() { state.povmSeed = (state.povmSeed + 7919) >>> 0; rebuildModel({povm: true}); requestCompute(true); },
+    resampleNoise() { state.noiseSeed = (state.noiseSeed + 10007) >>> 0; requestCompute(true); },
+    setN(N) { state.N = N; syncInput('shots', SHOTS.indexOf(N)); updateControlLabels(); requestCompute(true); },
+    setM(M) { state.M = M; syncInput('testShots', TEST_SHOTS.indexOf(M)); updateControlLabels(); requestCompute(false, true); },
+    setGamma(g) { state.gamma = g; syncInput('gamma', Math.round(g * 100)); updateControlLabels(); requestCompute(); },
+    setLambda(l) { state.lambda = l; syncInput('ridge', RIDGES.indexOf(l)); updateControlLabels(); requestCompute(); },
+    setRuns(B) { state.B = B; syncInput('runs', B); updateControlLabels(); requestCompute(true); },
+    setSamplingMode(mode) { state.samplingMode = mode; updateControlLabels(); requestCompute(true); },
+    setObservable(theta, phi) { state.obsTheta = theta; state.obsPhi = phi; syncInput('obsTheta', theta); syncInput('obsPhi', phi); requestCompute(); },
+    setTestState({testZ, testPerp, testPhi}) {
+      Object.assign(state, {testZ, testPerp, testPhi});
+      syncInput('testZ', Math.round(testZ * 100)); syncInput('testPerp', Math.round(testPerp * 100)); syncInput('testPhi', testPhi);
+      requestCompute(false, true);
+    }
+  };
+
+  /* ================================================================
+   * 15. Event wiring
+   * ================================================================ */
+  const onInput = (id, handler, type = 'input') => $(id).addEventListener(type, e => handler(+e.target.value));
+  onInput('outcomes', actions.setOutcomeCount);
+  onInput('trainingCount', actions.setTrainingCount);
+  onInput('shots', i => actions.setN(SHOTS[i]));
+  onInput('testShots', i => actions.setM(TEST_SHOTS[i]));
+  onInput('gamma', v => actions.setGamma(v / 100));
+  onInput('ridge', i => actions.setLambda(RIDGES[i]));
+  onInput('runs', actions.setRuns, 'change');
+  onInput('obsTheta', v => actions.setObservable(v, state.obsPhi));
+  onInput('obsPhi', v => actions.setObservable(state.obsTheta, v));
+  onInput('testZ', v => actions.setTestState({...state, testZ: v / 100}));
+  onInput('testPerp', v => actions.setTestState({...state, testPerp: v / 100}));
+  onInput('testPhi', v => actions.setTestState({...state, testPhi: v}));
+  const onClickAll = (selector, handler) => document.querySelectorAll(selector).forEach(btn => btn.addEventListener('click', () => handler(btn)));
+  onClickAll('.training-mode-btn', b => { if (state.trainingMode !== b.dataset.trainMode) actions.setTrainingMode(b.dataset.trainMode); });
+  onClickAll('.sampler-btn', b => { if (state.samplingMode !== b.dataset.sampler) actions.setSamplingMode(b.dataset.sampler); });
+  onClickAll('.observable-preset', b => actions.setObservable(...OBS_PRESETS[b.dataset.obs]));
+  onClickAll('.test-preset', b => actions.setTestState(TEST_PRESETS[b.dataset.test]));
+  $('resampleStates').addEventListener('click', () => { if (state.trainingMode === 'sphere') actions.resampleTrainingStates(); });
+  $('resample').addEventListener('click', actions.resampleNoise);
+  $('newPovm').addEventListener('click', actions.newPovm);
+  $('lockHistAxes').addEventListener('click', () => setHistogramLock(!state.histAxesLocked));
+  $('refitHistAxes').addEventListener('click', () => { if (state.histAxesLocked) setHistogramLock(true, true); });
+  for (const key of ['showCloud', 'showEllipse', 'showPca']) $(key).addEventListener('change', e => { state[key] = e.target.checked; drawSimplex(); });
+  for (const key of ['showTrain', 'showTest', 'showObservable', 'showPovm']) $(key).addEventListener('change', e => { state[key] = e.target.checked; drawBloch(); });
+  $('spectrumScale').addEventListener('change', e => { state.spectrumScale = e.target.value; drawSpectrum(); });
+  $('mseScale').addEventListener('change', e => { state.mseScale = e.target.value; drawMse(); });
+  $('mseCanvas').addEventListener('click', e => {
+    if (!msePlotRegion) return;
+    const {left, right} = msePlotRegion, x = e.clientX - $('mseCanvas').getBoundingClientRect().left;
+    if (x < left - 8 || x > right + 8) return;
+    const target = RIDGE_AXIS.zeroAt + (x - left) / (right - left) * (RIDGE_AXIS.max - RIDGE_AXIS.zeroAt);
+    actions.setLambda(RIDGES.reduce((best, l) => Math.abs(ridgeLog(l) - target) < Math.abs(ridgeLog(best) - target) ? l : best, RIDGES[0]));
+  });
+  $('exportCsv').addEventListener('click', exportCsv);
+
+  function exportCsv() {
+    const outcomes = Array.from({length: state.A}, (_, j) => j + 1), states = trainBloch.map((_, k) => k + 1);
+    const headers = ['run', 'K', 'A', 'training_mode', 'training_seed', 'N', 'M', 'gamma', 'lambda', 'sampling_mode', 'povm_seed', 'noise_seed',
+      'observable_x', 'observable_y', 'observable_z', 'test_x', 'test_y', 'test_z', 'true', 'predicted', 'training_only_prediction', 'test_shot_contribution', 'error', 'smallest_singular_value', 'weight_norm',
+      ...outcomes.map(j => `w${j}`),
+      ...states.flatMap(k => ['x', 'y', 'z'].map(c => `train_state${k}_${c}`)),
+      ...states.map(k => `true_label_${k}`), ...states.map(k => `noisy_label_${k}`), ...states.map(k => `label_gaussian_z_${k}`),
+      ...outcomes.map(j => `test_frequency_outcome${j}`),
+      ...states.flatMap(k => outcomes.map(j => `freq_state${k}_outcome${j}`))];
+    const y = trainBloch.map(r => dot(obsN, r)), minIdx = Math.min(state.K, state.A) - 1;
+    const rows = results.map((r, i) => [i + 1, state.K, state.A, state.trainingMode, state.trainSeed, state.N, state.M === Infinity ? 'Infinity' : state.M, state.gamma, state.lambda, state.samplingMode, state.povmSeed, state.noiseSeed,
+      ...obsN, ...testBloch, summary.truth, r.pred, r.trainOnlyPred, r.testContribution, r.err, Math.sqrt(samples[i].raw[minIdx].eig), r.wnorm,
+      ...r.w, ...trainBloch.flat(), ...y, ...r.noisyY, ...samples[i].labelZ, ...testSamples[i], ...samples[i].P.flat()]);
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = `qubit_povm_A${state.A}_K${state.K}_${state.trainingMode}_N${state.N}_lambda${state.lambda}.csv`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  /** Orbit, zoom, keyboard and tooltip handling for a 3D canvas. */
+  function installOrbit(canvasId, camName) {
+    const el = $(canvasId), cam = camera[camName], tip = $('tooltip'), redraw = camName === 'bloch' ? drawBloch : drawSimplex;
+    let drag = null;
+    const endDrag = () => { drag = null; el.classList.remove('dragging'); };
+    el.addEventListener('pointerdown', e => {
+      drag = {x: e.clientX, y: e.clientY, az: cam.az, el: cam.el};
+      el.setPointerCapture(e.pointerId); el.classList.add('dragging'); tip.style.display = 'none';
+    });
+    el.addEventListener('pointermove', e => {
+      if (drag) {
+        cam.az = drag.az - (e.clientX - drag.x) * .008;
+        cam.el = clamp(drag.el + (e.clientY - drag.y) * .008, -1.5, 1.5);
+        redraw(); return;
+      }
+      const rect = el.getBoundingClientRect(), x = e.clientX - rect.left, y = e.clientY - rect.top;
+      let nearest = null, d2 = 13 * 13;
+      for (const p of tooltipPoints[camName]) { const v = (p.x - x) ** 2 + (p.y - y) ** 2; if (v < d2) { d2 = v; nearest = p; } }
+      if (nearest) { tip.innerHTML = nearest.detail; tip.style.display = 'block'; tip.style.left = (e.clientX + 15) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; }
+      else tip.style.display = 'none';
+    });
+    el.addEventListener('pointerup', endDrag);
+    el.addEventListener('pointercancel', endDrag);
+    el.addEventListener('pointerleave', () => { if (!drag) tip.style.display = 'none'; });
+    // Wheel zooms within limits; once a limit is reached the page scrolls normally again.
+    el.addEventListener('wheel', e => {
+      const zoom = clamp(cam.zoom * (e.deltaY > 0 ? .93 : 1.07), ...ZOOM_RANGE);
+      if (zoom === cam.zoom) return;
+      e.preventDefault(); cam.zoom = zoom; redraw();
+    }, {passive: false});
+    const reset = () => { Object.assign(cam, CAMERA_HOME[camName]); redraw(); };
+    el.addEventListener('dblclick', reset);
+    el.addEventListener('keydown', e => {
+      const step = e.shiftKey ? .24 : .08, moves = {
+        ArrowLeft: () => { cam.az += step; }, ArrowRight: () => { cam.az -= step; },
+        ArrowUp: () => { cam.el = clamp(cam.el - step, -1.5, 1.5); }, ArrowDown: () => { cam.el = clamp(cam.el + step, -1.5, 1.5); },
+        '+': () => { cam.zoom = clamp(cam.zoom * 1.07, ...ZOOM_RANGE); }, '=': () => { cam.zoom = clamp(cam.zoom * 1.07, ...ZOOM_RANGE); },
+        '-': () => { cam.zoom = clamp(cam.zoom * .93, ...ZOOM_RANGE); }, '0': () => Object.assign(cam, CAMERA_HOME[camName]), Home: () => Object.assign(cam, CAMERA_HOME[camName])
+      };
+      if (!moves[e.key]) return;
+      e.preventDefault(); moves[e.key](); redraw();
+    });
+  }
+  installOrbit('blochCanvas', 'bloch');
+  installOrbit('simplexCanvas', 'simplex');
+
+  let redrawPending = false;
+  const ro = new ResizeObserver(entries => {
+    for (const entry of entries) { const c = canvases[entry.target.id]; c.w = Math.max(1, entry.contentRect.width); c.h = Math.max(1, entry.contentRect.height); }
+    if (redrawPending) return;
+    redrawPending = true;
+    requestAnimationFrame(() => { redrawPending = false; drawAll(); });
+  });
+  Object.values(canvases).forEach(c => ro.observe(c.el));
+
+  /* ================================================================
+   * 16. Start-up and public read-only diagnostics (for reproducibility and automated tests)
+   * ================================================================ */
+  rebuildModel({povm: true, training: true});
+  updateControlLabels();
+  povmInfo.renderNow();
+  math.typeset(document.body);   // instant HTML formulas; MathJax replaces them if it loads
+  updateExperiment(true);
+  math.load();
+
+  const copyRows = m => m.map(r => r.slice());
+  window.qubitLab = {
+    getState: () => ({...state}),
+    getPOVM: () => povm.map(m => ({...m, direction: m.direction.slice(), v: m.v.slice()})),
+    getTrainingStates: () => copyRows(trainBloch),
+    getTrueLabels: () => trainBloch.map(r => dot(obsN, r)),
+    getExactP: () => copyRows(exactP),
+    getTestP: () => testP.slice(),
+    getSample: () => copyRows(samples[0].P),
+    getTestSample: () => testSamples[0].slice(),
+    getNoisyLabels: () => results[0].noisyY.slice(),
+    getRealization: (i = 0) => ({...results[i], noisyY: results[i].noisyY.slice(), w: results[i].w.slice(), testFeatures: testSamples[i].slice(), trainFeatures: copyRows(samples[i].P)}),
+    getPredictions: () => results.map(r => r.pred),
+    getSummary: () => ({...summary, sorted: undefined}),
+    getSpectrum: () => ({raw: spectrumValues(representative.raw), centered: spectrumValues(representative.centered), exactRaw: spectrumValues(exactEigen.raw), exactCentered: spectrumValues(exactEigen.centered)}),
+    getMseCurve: () => mseCurve.map(p => ({...p})),
+    getHistogramAxes: () => ({...lastHistogramAxes, locked: state.histAxesLocked}),
+    setSamplingMode: mode => { if (['multinomial', 'gaussian'].includes(mode) && mode !== state.samplingMode) actions.setSamplingMode(mode); },
+    setHistogramAxisLock: locked => { if (!!locked !== state.histAxesLocked) setHistogramLock(!!locked); else drawHistogram(); },
+    setOutcomeCount: A => { if (Number.isInteger(A) && A >= 2 && A <= MAX_A) actions.setOutcomeCount(A); },
+    setTrainingCount: K => { if (Number.isInteger(K) && K >= 2 && K <= MAX_K) actions.setTrainingCount(K); },
+    setTrainingMode: mode => { if (['z', 'sphere'].includes(mode) && mode !== state.trainingMode) actions.setTrainingMode(mode); },
+    resampleTrainingStates: () => { if (state.trainingMode === 'sphere') actions.resampleTrainingStates(); },
+    setN: N => { if (SHOTS.includes(N)) actions.setN(N); },
+    setM: M => { if (TEST_SHOTS.includes(M)) actions.setM(M); },
+    setGamma: g => { if (g >= 0 && g <= 1) actions.setGamma(Math.round(g * 100) / 100); },
+    setLambda: l => { if (RIDGES.includes(l)) actions.setLambda(l); },
+    setRuns: B => { if (RUN_OPTIONS.includes(B)) actions.setRuns(B); }
+  };
+})();
+</script>
+</body>
+</html>
